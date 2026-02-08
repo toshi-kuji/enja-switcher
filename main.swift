@@ -57,15 +57,6 @@ enum CommandSide {
 /// 現在押下中のCommandキーの左右。解放時の切り替え判定に使用。
 var currentCommandSide: CommandSide = .none
 
-// MARK: - Event Flag Constants
-
-/// 左Commandキーを示すビット（NX_DEVICELCMDKEYMASK）
-let leftCommandBit: UInt64 = 0x08
-/// 右Commandキーを示すビット（NX_DEVICERCMDKEYMASK）
-let rightCommandBit: UInt64 = 0x10
-/// Commandキー全般（左右問わず）を示すマスク
-let commandMask = CGEventFlags.maskCommand.rawValue
-
 // MARK: - Event Tap
 
 /// CGEventTap の CFMachPort 参照を保持するための名前空間。
@@ -86,11 +77,18 @@ let eventCallback: CGEventTapCallBack = { _, type, event, _ -> Unmanaged<CGEvent
         if let port = Tap.machPort {
             CGEvent.tapEnable(tap: port, enable: true)
         }
-        return Unmanaged.passUnretained(event)
+        return Unmanaged.passRetained(event)
     }
 
     // イベントフラグの生値を取得。修飾キーの状態がビットフィールドで格納されている。
     let rawFlags = event.flags.rawValue
+
+    // 左Commandキーを示すビット（NX_DEVICELCMDKEYMASK）
+    let leftCommandBit: UInt64 = 0x08
+    // 右Commandキーを示すビット（NX_DEVICERCMDKEYMASK）
+    let rightCommandBit: UInt64 = 0x10
+    // Commandキー全般（左右問わず）を示すマスク
+    let commandMask = CGEventFlags.maskCommand.rawValue
 
     // 現在Commandキーが押されているかどうか
     let isCommand = (rawFlags & commandMask) != 0
@@ -115,14 +113,6 @@ let eventCallback: CGEventTapCallBack = { _, type, event, _ -> Unmanaged<CGEvent
                 // 両方同時押し等、判別不能
                 currentCommandSide = .none
             }
-        } else if isCommand && commandIsDown {
-            // === Command押下中に修飾キーが変化 ===
-            // 左右両方のCommandキーが同時に押されている場合、意図が曖昧なため切り替えを抑制する。
-            let isLeft = (rawFlags & leftCommandBit) != 0
-            let isRight = (rawFlags & rightCommandBit) != 0
-            if isLeft && isRight {
-                currentCommandSide = .none
-            }
         } else if !isCommand && commandIsDown {
             // === Command解放の瞬間 ===
             commandIsDown = false
@@ -142,7 +132,7 @@ let eventCallback: CGEventTapCallBack = { _, type, event, _ -> Unmanaged<CGEvent
             currentCommandSide = .none
         }
 
-        return Unmanaged.passUnretained(event)
+        return Unmanaged.passRetained(event)
     }
 
     // keyDown / keyUp イベント:
@@ -152,7 +142,7 @@ let eventCallback: CGEventTapCallBack = { _, type, event, _ -> Unmanaged<CGEvent
         otherKeyPressedDuringCommand = true
     }
 
-    return Unmanaged.passUnretained(event)
+    return Unmanaged.passRetained(event)
 }
 
 // MARK: - Main
@@ -167,18 +157,18 @@ let eventMask: CGEventMask =
 
 /// CGEventTap の作成を試みる。権限がない場合はプロンプトを表示し、5秒間隔でリトライする。
 /// CGEvent.tapCreate は権限がないと nil を返すため、これを権限判定に利用する。
-func createEventTap() -> CFMachPort {
-    if let t = CGEvent.tapCreate(
-        tap: .cgSessionEventTap,
-        place: .headInsertEventTap,
-        options: .listenOnly,
-        eventsOfInterest: eventMask,
-        callback: eventCallback,
-        userInfo: nil
-    ) {
-        return t
-    }
+var tap: CFMachPort!
 
+if let t = CGEvent.tapCreate(
+    tap: .cgSessionEventTap,
+    place: .headInsertEventTap,
+    options: .listenOnly,
+    eventsOfInterest: eventMask,
+    callback: eventCallback,
+    userInfo: nil
+) {
+    tap = t
+} else {
     // 権限がないのでプロンプトを表示してリトライ
     promptInputMonitoringPermission()
 
@@ -192,12 +182,11 @@ func createEventTap() -> CFMachPort {
             callback: eventCallback,
             userInfo: nil
         ) {
-            return t
+            tap = t
+            break
         }
     }
 }
-
-let tap = createEventTap()
 
 /// 作成した tap を保持し、コールバック内から再有効化できるようにする。
 Tap.machPort = tap

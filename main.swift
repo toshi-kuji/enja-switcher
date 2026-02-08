@@ -1,6 +1,5 @@
 import Carbon      // TISCopyInputSourceForLanguage, TISSelectInputSource など入力ソースAPI
-import Cocoa        // AXIsProcessTrustedWithOptions（入力監視の権限チェック・設定画面オープン用）
-import Foundation  // signal など基盤API
+import Cocoa        // AXIsProcessTrustedWithOptions, CGEvent, sleep など
 
 // MARK: - Input Monitoring Permission Check
 
@@ -8,7 +7,7 @@ import Foundation  // signal など基盤API
 /// AXIsProcessTrustedWithOptions に kAXTrustedCheckOptionPrompt: true を渡すと、
 /// macOSが自動でシステム設定の入力監視画面を開く。
 /// 実際の権限有無は CGEvent.tapCreate の成否で判定する（より確実）。
-func promptAccessibilityIfNeeded() {
+func promptInputMonitoringPermission() {
     let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
     AXIsProcessTrustedWithOptions(options)
 }
@@ -118,7 +117,7 @@ let eventCallback: CGEventTapCallBack = { _, type, event, _ -> Unmanaged<CGEvent
             // === Command解放の瞬間 ===
             commandIsDown = false
 
-            // 他のキーが押されていない = Commandの単独タップ → 切り替え発動
+            // 他のキーが押されていない = Commandの単押し → 切り替え発動
             if !otherKeyPressedDuringCommand {
                 switch currentCommandSide {
                 case .left:
@@ -138,7 +137,7 @@ let eventCallback: CGEventTapCallBack = { _, type, event, _ -> Unmanaged<CGEvent
 
     // keyDown / keyUp イベント:
     // Commandが押されている最中に他のキーが押された場合、
-    // ショートカット操作（Command+C 等）なのでタップとみなさないようフラグを立てる。
+    // ショートカット操作（Command+C 等）なので単押しとみなさないようフラグを立てる。
     if commandIsDown {
         otherKeyPressedDuringCommand = true
     }
@@ -171,9 +170,7 @@ if let t = CGEvent.tapCreate(
     tap = t
 } else {
     // 権限がないのでプロンプトを表示してリトライ
-    fputs("enja-switcher: Input Monitoring permission required.\n", stderr)
-    promptAccessibilityIfNeeded()
-    fputs("enja-switcher: Waiting for permission...\n", stderr)
+    promptInputMonitoringPermission()
 
     while true {
         sleep(5)
@@ -189,8 +186,6 @@ if let t = CGEvent.tapCreate(
             break
         }
     }
-
-    fputs("enja-switcher: Permission granted.\n", stderr)
 }
 
 /// 作成した tap を保持し、コールバック内から再有効化できるようにする。
@@ -201,14 +196,6 @@ Tap.machPort = tap
 let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
 CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
 CGEvent.tapEnable(tap: tap, enable: true)
-
-fputs("enja-switcher: running (Left Cmd → EN, Right Cmd → JA)\n", stderr)
-
-/// Ctrl+C（SIGINT）を受けた際にメッセージを出して終了する。
-signal(SIGINT) { _ in
-    fputs("\nenja-switcher: stopped\n", stderr)
-    exit(0)
-}
 
 /// RunLoop を起動し、イベント監視を永続的に実行する。
 /// この呼び出しは戻らない（プロセスが終了するまでブロックする）。

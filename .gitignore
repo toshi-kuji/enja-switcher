@@ -1,0 +1,11 @@
+
+# macOS
+.DS_Store
+
+# AI Assistant config
+.claude/
+
+# Build artifacts
+EnJaSwitcher.app/
+enja-switcher
+*.o

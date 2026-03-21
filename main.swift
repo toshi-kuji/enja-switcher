@@ -1,5 +1,5 @@
-import Carbon      // TISCopyInputSourceForLanguage, TISSelectInputSource など入力ソースAPI
-import Cocoa        // AXIsProcessTrustedWithOptions, CGEvent, sleep など
+import Carbon  // TISCopyInputSourceForLanguage, TISSelectInputSource など入力ソースAPI
+import Cocoa  // AXIsProcessTrustedWithOptions, CGEvent, sleep など
 
 // MARK: - Input Monitoring Permission Check
 
@@ -14,25 +14,25 @@ func promptInputMonitoringPermission() {
 
 // MARK: - Input Source Switching
 
-/// 指定された言語識別子（"en", "ja" など）に対応する入力ソースに切り替える。
-/// TISCopyInputSourceForLanguage で言語に対応する入力ソースを取得し、
-/// TISSelectInputSource で実際にアクティブにする。
-/// 該当する入力ソースが見つからない場合は何もしない。
-func switchInputSource(to language: String) {
-    guard let source = TISCopyInputSourceForLanguage(language as CFString)?.takeRetainedValue() else {
-        return
-    }
-    TISSelectInputSource(source)
+/// 仮想キーコードを送信して入力ソースを切り替える。
+/// TISSelectInputSource のバグ（一部のアプリで入力ソースが反映されない問題）を回避するため、
+/// JISキーボードの「英数」(102) と「かな」(104) キーの押下イベントをシミュレートする。
+func postKey(_ key: CGKeyCode) {
+    let source = CGEventSource(stateID: .hidSystemState)
+    let keyDown = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: true)
+    let keyUp = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: false)
+    keyDown?.post(tap: .cghidEventTap)
+    keyUp?.post(tap: .cghidEventTap)
 }
 
 /// 英語入力ソース（ABC）に切り替える。
 func switchToEnglish() {
-    switchInputSource(to: "en")
+    postKey(102)  // JIS「英数」キー
 }
 
 /// 日本語入力ソース（ひらがな）に切り替える。
 func switchToJapanese() {
-    switchInputSource(to: "ja")
+    postKey(104)  // JIS「かな」キー
 }
 
 // MARK: - Tap State
@@ -49,8 +49,8 @@ var commandIsDown = false
 /// flagsChanged の押下時にビットマスクから判別し、解放時に参照する。
 /// 解放イベントではサイドビットがクリアされるため、押下時に記録しておく必要がある。
 enum CommandSide {
-    case none   // 判別不能（両方同時押し等）
-    case left   // 左Command
+    case none  // 判別不能（両方同時押し等）
+    case left  // 左Command
     case right  // 右Command
 }
 
@@ -151,9 +151,8 @@ let eventCallback: CGEventTapCallBack = { _, type, event, _ -> Unmanaged<CGEvent
 /// - flagsChanged: 修飾キー（Command等）の押下/解放
 /// - keyDown / keyUp: 通常キーの押下/解放（コンビネーション検出用）
 let eventMask: CGEventMask =
-    (1 << CGEventType.flagsChanged.rawValue) |
-    (1 << CGEventType.keyDown.rawValue) |
-    (1 << CGEventType.keyUp.rawValue)
+    (1 << CGEventType.flagsChanged.rawValue) | (1 << CGEventType.keyDown.rawValue)
+    | (1 << CGEventType.keyUp.rawValue)
 
 /// CGEventTap の作成を試みる。権限がない場合はプロンプトを表示し、5秒間隔でリトライする。
 /// CGEvent.tapCreate は権限がないと nil を返すため、これを権限判定に利用する。

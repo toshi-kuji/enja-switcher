@@ -59,6 +59,62 @@ enja-switcher/
         enja-switcher                 ← コンパイル済みバイナリ
 ```
 
+## インストール手順（初回）
+
+初めて使用する場合は、以下の手順を順番に実行してください。
+
+### ステップ 1: 前提条件の確認
+
+Xcode Command Line Tools がインストールされていることを確認します。
+
+```bash
+xcode-select --version
+```
+
+インストールされていない場合：
+
+```bash
+xcode-select --install
+```
+
+### ステップ 2: リポジトリのクローン
+
+```bash
+git clone https://github.com/toshi-kuji/enja-switcher.git
+cd enja-switcher
+```
+
+### ステップ 3: ビルド・署名・配置
+
+```bash
+swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa
+cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
+codesign --force --sign - EnJaSwitcher.app
+cp -r EnJaSwitcher.app /Applications/
+```
+
+### ステップ 4: 初回起動して権限を付与
+
+```bash
+open /Applications/EnJaSwitcher.app
+```
+
+初回起動時にmacOSのダイアログが表示されます。**システム設定 > プライバシーとセキュリティ** を開き、以下の2箇所で `EnJaSwitcher` を許可（オン）してください：
+
+- **アクセシビリティ**（仮想キー送信に必要）
+- **入力監視**（Commandキー監視に必要）
+
+> **重要**: 必ず `.app` として起動してください。ターミナルからバイナリを直接実行すると、権限がTerminal.appに付与されてしまい正しく動作しません。
+
+### ステップ 5: 動作確認
+
+- **左Command 単押し** → 英語（ABC）に切り替わる
+- **右Command 単押し** → 日本語（ひらがな）に切り替わる
+
+これでインストール完了です。次回以降のログイン時も手動で起動が必要な場合は、「スタートアップ登録」セクションを参照してください。
+
+---
+
 ## ビルドとアプリ更新時の注意（重要）
 
 ### コンパイル・署名・配置
@@ -71,7 +127,7 @@ rm -rf /Applications/EnJaSwitcher.app
 cp -r EnJaSwitcher.app /Applications/
 ```
 
-> **🚨 セキュリティ権限の完全リセットについて（アップデート時）**
+> **セキュリティ権限の完全リセットについて（アップデート時）**
 > バイナリを再コンパイルして `/Applications/` に上書き配置した場合、macOSはこれを「過去に許可したものとは別の新しいアプリ」と見なし、**バックグラウンドでの動作をサイレントにブロック**します。
 > この状態になると、権限画面でスイッチが「オン」になっていても動作しません。
 >
@@ -82,31 +138,6 @@ cp -r EnJaSwitcher.app /Applications/
 > 4. システム設定 > プライバシーとセキュリティ > **入力監視** でも、同様に **「ー」で削除してから「＋」で追加**を行う。
 >
 > スイッチのオフ/オンだけでは古いキャッシュが残りブロックされ続けるため、必ず「マイナスで削除してプラスで追加」を行ってください。
-
-## インストールと初回セットアップ
-
-### 1. アプリを `/Applications/` に配置
-
-```bash
-cp -r EnJaSwitcher.app /Applications/
-```
-
-### 2. 初回起動して権限を付与
-
-Finderで `/Applications/EnJaSwitcher.app` をダブルクリック、またはターミナルで：
-
-```bash
-open /Applications/EnJaSwitcher.app
-```
-
-初回起動時、macOSのセキュリティ機能によって権限ダイアログが表示されます。
-指示に従って、**システム設定 > プライバシーとセキュリティ** の **「アクセシビリティ」** および **「入力監視」** の両方で `EnJaSwitcher` を許可（オン）してください。
-
-**重要**: 必ず `.app` として起動してください。ターミナルからバイナリを直接実行すると、権限がTerminal.appに付与されてしまい、アプリ自体には付与されません。
-
-### 3. 動作確認
-
-左Commandを単押し → 英語、右Commandを単押し → 日本語に切り替わることを確認する。
 
 ## スタートアップ登録（LaunchAgent）
 

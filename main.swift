@@ -55,6 +55,7 @@ class EventInterceptor {
     private var capsLockIsOn = false
     private var lastCapsLockPressTime: CFAbsoluteTime = 0
     private let doublePressThreshold: CFAbsoluteTime = 0.3
+    private var pendingSinglePressTimer: Timer?
 
     private var tap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
@@ -223,15 +224,22 @@ class EventInterceptor {
                 let currentTime = CFAbsoluteTimeGetCurrent()
                 let timeSinceLastPress = currentTime - lastCapsLockPressTime
 
-                if timeSinceLastPress <= doublePressThreshold {
-                    // ダブルプレス：日本語へ切り替え
+                if pendingSinglePressTimer != nil && timeSinceLastPress <= doublePressThreshold {
+                    // ダブルプレス：待機中のシングルプレスタイマーをキャンセルして日本語へ切り替え
+                    pendingSinglePressTimer?.invalidate()
+                    pendingSinglePressTimer = nil
                     switchToJapanese()
-                    // 連続タップで誤爆しないようにリセット
                     lastCapsLockPressTime = 0
                 } else {
-                    // シングルプレス：英語へ切り替え
-                    switchToEnglish()
+                    // 1回目の押下：0.3s待ってからシングルプレスと判定して英語へ切り替え
+                    pendingSinglePressTimer?.invalidate()
                     lastCapsLockPressTime = currentTime
+                    pendingSinglePressTimer = Timer.scheduledTimer(
+                        withTimeInterval: doublePressThreshold, repeats: false
+                    ) { [weak self] _ in
+                        switchToEnglish()
+                        self?.pendingSinglePressTimer = nil
+                    }
                 }
             }
         }
@@ -258,9 +266,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 1. システムのメニューバーにステータスアイテム（領域）を作成
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
-        // 2. メニューバーアイコンを設定（シンプルなテキスト "E/J" を使用）
+        // 2. メニューバーアイコンを設定（AppIcon をリサイズして使用）
         if let button = statusItem.button {
-            button.title = "E/J"
+            if let icon = NSImage(named: "AppIcon") {
+                icon.size = NSSize(width: 18, height: 18)
+                button.image = icon
+            } else {
+                button.title = "E/J"
+            }
         }
 
         // 3. メニューの作成と項目の追加

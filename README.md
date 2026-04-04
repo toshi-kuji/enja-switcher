@@ -187,7 +187,7 @@ launchctl load ~/Library/LaunchAgents/com.local.enja-switcher.plist
 
 ## 停止方法
 
-メニューバーの「E/J」アイコンをクリックし、**「Quit EnJaSwitcher」** を選択して終了します（※メニュー機能は現在実装中です）。
+メニューバーの「E/J」アイコンをクリックし、**「Quit EnJaSwitcher」** を選択して終了します。
 
 何らかの理由でメニューが反応しない場合は、以下の方法で強制終了できます。
 
@@ -203,17 +203,34 @@ launchctl load ~/Library/LaunchAgents/com.local.enja-switcher.plist
 pkill -f enja-switcher
 ```
 
-## アンインストール
+## 完全なアンインストール手順
 
+本アプリ（旧バージョンを含む）を完全にシステムから削除するには、以下の手順を実行してください。
+
+### ステップ 1: アプリプロセスの終了
+メニューバーから終了するか、以下のコマンドで強制終了します。
 ```bash
 pkill -f enja-switcher
-launchctl unload ~/Library/LaunchAgents/com.local.enja-switcher.plist
-rm ~/Library/LaunchAgents/com.local.enja-switcher.plist
+```
+
+### ステップ 2: 自動起動（LaunchAgent）設定の削除
+```bash
+launchctl unload ~/Library/LaunchAgents/com.local.enja-switcher.plist 2>/dev/null
+rm -f ~/Library/LaunchAgents/com.local.enja-switcher.plist
+```
+
+### ステップ 3: アプリケーション本体の削除
+```bash
 rm -rf /Applications/EnJaSwitcher.app
 ```
 
-以下も手動で確認・削除する：
-- **アクセシビリティ・入力監視**: システム設定 > プライバシーとセキュリティ から `EnJaSwitcher` をマイナスボタンで削除
+### ステップ 4: macOSのセキュリティ権限のクリーンアップ（手動）
+アプリ本体を削除しても、macOSの設定画面には古い権限情報が残るため、以下の手順で手動削除します。
+1. **システム設定 ＞ プライバシーとセキュリティ** を開く。
+2. **アクセシビリティ** をクリックし、リストの中に `EnJaSwitcher` があれば選択して下の **「ー（マイナス）」** ボタンを押して削除します。
+3. 同様に、**入力監視** のリストからも `EnJaSwitcher` を削除します。
+
+これで完全なアンインストールは完了です。
 
 ## トラブルシューティング
 

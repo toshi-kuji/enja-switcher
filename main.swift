@@ -197,5 +197,69 @@ CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
 CGEvent.tapEnable(tap: tap, enable: true)
 
 /// RunLoop を起動し、イベント監視を永続的に実行する。
-/// この呼び出しは戻らない（プロセスが終了するまでブロックする）。
-CFRunLoopRun()
+/// 以前は CFRunLoopRun() を使用していたが、GUIアプリ化に伴い NSApplication を起動する。
+
+class AppDelegate: NSObject, NSApplicationDelegate {
+    var statusItem: NSStatusItem!
+
+    // UIの各項目への参照を保持
+    var commandMenuItem: NSMenuItem!
+    var capsLockMenuItem: NSMenuItem!
+
+    func applicationDidFinishLaunching(_ aNotification: Notification) {
+        print("EnJaSwitcher GUI started.")
+
+        // 1. システムのメニューバーにステータスアイテム（領域）を作成
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+
+        // 2. メニューバーアイコンを設定（シンプルなテキスト "E/J" を使用）
+        if let button = statusItem.button {
+            button.title = "E/J"
+        }
+
+        // 3. メニューの作成と項目の追加
+        let menu = NSMenu()
+
+        // --- Option 1: Left/Right Command ---
+        commandMenuItem = NSMenuItem(
+            title: "Left/Right Command", action: #selector(switchMethodChanged(_:)),
+            keyEquivalent: "")
+        commandMenuItem.target = self
+        commandMenuItem.state = .on  // デフォルトはCommand方式
+        menu.addItem(commandMenuItem)
+
+        // --- Option 2: CapsLock ---
+        capsLockMenuItem = NSMenuItem(
+            title: "CapsLock (Single/Double)", action: #selector(switchMethodChanged(_:)),
+            keyEquivalent: "")
+        capsLockMenuItem.target = self
+        capsLockMenuItem.state = .off  // まだ実装前だがUIとしては用意する
+        menu.addItem(capsLockMenuItem)
+
+        // --- セパレーター ---
+        menu.addItem(NSMenuItem.separator())
+
+        // --- Quit ---
+        let quitMenuItem = NSMenuItem(
+            title: "Quit EnJaSwitcher", action: #selector(NSApplication.terminate(_:)),
+            keyEquivalent: "q")
+        menu.addItem(quitMenuItem)
+
+        // メニューをステータスアイテムに紐付け
+        statusItem.menu = menu
+    }
+
+    // メニュー項目がクリックされたときのアクション
+    @objc func switchMethodChanged(_ sender: NSMenuItem) {
+        // 選択された項目にチェックマークを入れ、それ以外を外す
+        commandMenuItem.state = (sender == commandMenuItem) ? .on : .off
+        capsLockMenuItem.state = (sender == capsLockMenuItem) ? .on : .off
+
+        // 将来のフェーズで、ここで実際の切り替えロジックを切り替える
+        print("Selected switching method changed to: \(sender.title)")
+    }
+}
+let app = NSApplication.shared
+let delegate = AppDelegate()
+app.delegate = delegate
+app.run()

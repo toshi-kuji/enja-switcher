@@ -21,25 +21,25 @@ Transform the current `enja-switcher` into a native macOS GUI application. The a
 ## Implementation Steps
 
 ### Phase 1: Application Lifecycle & UI Setup
-- [ ] Migrate `main.swift` to bootstrap a native AppKit app.
+- [x] Migrate `main.swift` to bootstrap a native AppKit app.
   - Create an `AppDelegate` conforming to `NSApplicationDelegate`.
   - Use `NSApplication.shared.delegate = delegate` and `NSApplication.shared.run()` to replace the raw `CFRunLoopRun()`.
-- [ ] Ensure `Info.plist` continues to have `LSUIElement` set to `YES`.
+- [x] Ensure `Info.plist` continues to have `LSUIElement` set to `YES`.
 
 ### Phase 2: Menu Bar UI (NSStatusBar)
-- [ ] In `AppDelegate.applicationDidFinishLaunching`, create an `NSStatusItem` using `NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)`.
-- [ ] Create a Menu Bar Icon (e.g., a simple text icon "A/あ", an SF Symbol, or a custom 16x16 / 32x32@2x image) and assign it to the status item's button.
-- [ ] Create an `NSMenu` to attach to the status item.
+- [x] In `AppDelegate.applicationDidFinishLaunching`, create an `NSStatusItem` using `NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)`.
+- [x] Create a Menu Bar Icon (e.g., a simple text icon "A/あ", an SF Symbol, or a custom 16x16 / 32x32@2x image) and assign it to the status item's button.
+- [x] Create an `NSMenu` to attach to the status item.
 
 ### Phase 3: Menu Items & User Interaction
-- [ ] Add menu items for the switching options:
+- [x] Add menu items for the switching options:
   - `Left/Right Command` (Checkable)
   - `CapsLock (Single/Double)` (Checkable)
-- [ ] Add a visual checkmark (`NSControl.StateValue.on`) to the currently active option.
-- [ ] Add standard menu items:
+- [x] Add a visual checkmark (`NSControl.StateValue.on`) to the currently active option.
+- [x] Add standard menu items:
   - `Separator`
   - `Quit EnJaSwitcher`
-- [ ] Implement action methods for when the user clicks a menu item to update the active method.
+- [x] Implement action methods for when the user clicks a menu item to update the active method.
 
 ### Phase 4: Core Logic Integration & Refactoring
 - [ ] Refactor the existing `CGEventTap` logic from `main.swift` into a dedicated class (e.g., `EventInterceptor`).

@@ -98,6 +98,8 @@ cd enja-switcher
 
 ```bash
 swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
+mkdir -p EnJaSwitcher.app/Contents/Resources
+cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
 cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
 codesign --force --sign - EnJaSwitcher.app
 cp -r EnJaSwitcher.app /Applications/
@@ -131,6 +133,8 @@ open /Applications/EnJaSwitcher.app
 
 ```bash
 swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
+mkdir -p EnJaSwitcher.app/Contents/Resources
+cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
 cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
 codesign --force --sign - EnJaSwitcher.app
 rm -rf /Applications/EnJaSwitcher.app

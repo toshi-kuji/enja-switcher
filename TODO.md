@@ -54,13 +54,13 @@ Transform the current `enja-switcher` into a native macOS GUI application. The a
 - [x] On app launch, read from `UserDefaults` to restore the previously selected method and update the UI checkmarks and interceptor state accordingly.
 
 ### Phase 6: Permissions Handling (Accessibility) Refinement
-- [ ] Integrate the existing `promptInputMonitoringPermission()` and `CGEvent.tapCreate` retry loop gracefully into the `AppKit` lifecycle. Ensure the UI remains responsive while waiting for permissions.
+- [x] Integrate the existing `promptInputMonitoringPermission()` and `CGEvent.tapCreate` retry loop gracefully into the `AppKit` lifecycle. Ensure the UI remains responsive while waiting for permissions.
 
 ### Phase 7: Assets & App Icon
-- [ ] Create an Application Icon (`.icns` file) so the app has a proper icon in macOS "System Settings" (Privacy & Security) and "Activity Monitor".
-- [ ] Update `Info.plist` to include `CFBundleIconFile` pointing to the `.icns` file.
-- [ ] Ensure the `.icns` file is correctly copied into `EnJaSwitcher.app/Contents/Resources/` during the build process.
+- [x] Create an Application Icon (`.icns` file) so the app has a proper icon in macOS "System Settings" (Privacy & Security) and "Activity Monitor".
+- [x] Update `Info.plist` to include `CFBundleIconFile` pointing to the `.icns` file.
+- [x] Ensure the `.icns` file is correctly copied into `EnJaSwitcher.app/Contents/Resources/` during the build process.
 
 ### Phase 8: Polish & Release
-- [ ] Test the application across different scenarios (sleep/wake, fast typing, multiple displays).
-- [ ] Update documentation (`README.md`) to reflect the new GUI, settings, and how to use the CapsLock feature.
+- [x] Test the application across different scenarios (sleep/wake, fast typing, multiple displays).
+- [x] Update documentation (`README.md`) to reflect the new GUI, settings, and how to use the CapsLock feature.

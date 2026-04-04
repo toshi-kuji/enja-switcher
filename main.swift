@@ -80,12 +80,17 @@ class EventInterceptor {
             userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
         ) {
             self.tap = t
+            self.enableTapAndHIDManager()
         } else {
             promptInputMonitoringPermission()
 
-            // 権限が付与されるまで待機（Phase 6でAppKitのライフサイクルに統合予定）
-            while true {
-                sleep(5)
+            // 権限が付与されるまでTimerを使って非同期で待機（AppKitのメインスレッドをブロックしない）
+            Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] timer in
+                guard let self = self else {
+                    timer.invalidate()
+                    return
+                }
+
                 if let t = CGEvent.tapCreate(
                     tap: .cgSessionEventTap,
                     place: .headInsertEventTap,
@@ -95,17 +100,20 @@ class EventInterceptor {
                     userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
                 ) {
                     self.tap = t
-                    break
+                    self.enableTapAndHIDManager()
+                    timer.invalidate()
+                    print("Permission granted. Event taps enabled.")
                 }
             }
         }
+    }
 
+    private func enableTapAndHIDManager() {
         if let tap = self.tap {
             runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
             CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
             CGEvent.tapEnable(tap: tap, enable: true)
         }
-
         setupHIDManager()
     }
 

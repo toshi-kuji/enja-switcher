@@ -1,12 +1,9 @@
 import Carbon  // TISCopyInputSourceForLanguage, TISSelectInputSource など入力ソースAPI
 import Cocoa  // AXIsProcessTrustedWithOptions, CGEvent, sleep など
+import IOKit.hid  // IOHIDManager for hardware-level CapsLock detection
 
 // MARK: - Input Monitoring Permission Check
 
-/// 入力監視の権限プロンプトを表示する。
-/// AXIsProcessTrustedWithOptions に kAXTrustedCheckOptionPrompt: true を渡すと、
-/// macOSが自動でシステム設定の入力監視画面を開く。
-/// 実際の権限有無は CGEvent.tapCreate の成否で判定する（より確実）。
 func promptInputMonitoringPermission() {
     let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
     AXIsProcessTrustedWithOptions(options)
@@ -14,9 +11,6 @@ func promptInputMonitoringPermission() {
 
 // MARK: - Input Source Switching
 
-/// 仮想キーコードを送信して入力ソースを切り替える。
-/// TISSelectInputSource のバグ（一部のアプリで入力ソースが反映されない問題）を回避するため、
-/// JISキーボードの「英数」(102) と「かな」(104) キーの押下イベントをシミュレートする。
 func postKey(_ key: CGKeyCode) {
     let source = CGEventSource(stateID: .hidSystemState)
     let keyDown = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: true)
@@ -25,186 +19,230 @@ func postKey(_ key: CGKeyCode) {
     keyUp?.post(tap: .cghidEventTap)
 }
 
-/// 英語入力ソース（ABC）に切り替える。
 func switchToEnglish() {
     postKey(102)  // JIS「英数」キー
 }
 
-/// 日本語入力ソース（ひらがな）に切り替える。
 func switchToJapanese() {
     postKey(104)  // JIS「かな」キー
 }
 
-// MARK: - Tap State
+// MARK: - Event Interceptor
 
-/// Commandキーを押している間に他のキーが押されたかどうか。
-/// true の場合、Command+C 等のショートカット操作なので切り替えを行わない。
-var otherKeyPressedDuringCommand = false
-
-/// Commandキーが現在押下中かどうか。
-/// flagsChanged イベントで押下/解放を追跡する。
-var commandIsDown = false
-
-/// 現在押されているCommandキーが左右どちらかを表す。
-/// flagsChanged の押下時にビットマスクから判別し、解放時に参照する。
-/// 解放イベントではサイドビットがクリアされるため、押下時に記録しておく必要がある。
-enum CommandSide {
-    case none  // 判別不能（両方同時押し等）
-    case left  // 左Command
-    case right  // 右Command
-}
-
-/// 現在押下中のCommandキーの左右。解放時の切り替え判定に使用。
-var currentCommandSide: CommandSide = .none
-
-// MARK: - Event Tap
-
-/// CGEventTap の CFMachPort 参照を保持するための名前空間。
-/// tapDisabledByTimeout 時に再有効化するためにコールバック内からアクセスする。
-/// case なしの enum を使うことでインスタンス化を防いでいる。
-enum Tap {
-    static var machPort: CFMachPort?
-}
-
-/// CGEventTap に登録するコールバック関数。
-/// すべてのキーボードイベント（修飾キー変更・キー押下・キー解放）を受け取り、
-/// Commandキーの単押し（押して離す）を検出して入力ソースを切り替える。
-/// listenOnly モードのため、イベント自体は変更せずそのまま返す。
-let eventCallback: CGEventTapCallBack = { _, type, event, _ -> Unmanaged<CGEvent>? in
-    // システムがタイムアウトやユーザー操作でタップを無効化した場合に再有効化する。
-    // 高負荷時などに発生しうる。
-    if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-        if let port = Tap.machPort {
-            CGEvent.tapEnable(tap: port, enable: true)
-        }
-        return Unmanaged.passRetained(event)
+class EventInterceptor {
+    enum SwitchingMode {
+        case command
+        case capsLock
     }
 
-    // イベントフラグの生値を取得。修飾キーの状態がビットフィールドで格納されている。
-    let rawFlags = event.flags.rawValue
+    var currentMode: SwitchingMode = .command {
+        didSet {
+            print("Switching mode changed to: \(currentMode)")
+        }
+    }
 
-    // 左Commandキーを示すビット（NX_DEVICELCMDKEYMASK）
-    let leftCommandBit: UInt64 = 0x08
-    // 右Commandキーを示すビット（NX_DEVICERCMDKEYMASK）
-    let rightCommandBit: UInt64 = 0x10
-    // Commandキー全般（左右問わず）を示すマスク
-    let commandMask = CGEventFlags.maskCommand.rawValue
+    enum CommandSide {
+        case none
+        case left
+        case right
+    }
 
-    // 現在Commandキーが押されているかどうか
-    let isCommand = (rawFlags & commandMask) != 0
+    private var commandIsDown = false
+    private var otherKeyPressedDuringCommand = false
+    private var currentCommandSide: CommandSide = .none
 
-    // flagsChanged: 修飾キー（Command, Shift, Option, Control等）の状態変化時に発火
-    if type == .flagsChanged {
-        if isCommand && !commandIsDown {
-            // === Command押下の瞬間 ===
-            commandIsDown = true
-            otherKeyPressedDuringCommand = false
+    // CapsLock監視用の状態変数
+    private var capsLockIsOn = false
+    private var lastCapsLockPressTime: CFAbsoluteTime = 0
+    private let doublePressThreshold: CFAbsoluteTime = 0.3
 
-            // サイドビットで左右を判別。
-            // 押下時のみサイドビットが立つ（解放時はクリアされる）ため、ここで記録する。
-            let isLeft = (rawFlags & leftCommandBit) != 0
-            let isRight = (rawFlags & rightCommandBit) != 0
+    private var tap: CFMachPort?
+    private var runLoopSource: CFRunLoopSource?
+    private var hidManager: IOHIDManager?
 
-            if isLeft && !isRight {
-                currentCommandSide = .left
-            } else if isRight && !isLeft {
-                currentCommandSide = .right
-            } else {
-                // 両方同時押し等、判別不能
-                currentCommandSide = .none
-            }
-        } else if !isCommand && commandIsDown {
-            // === Command解放の瞬間 ===
-            commandIsDown = false
+    func start() {
+        let eventMask: CGEventMask =
+            (1 << CGEventType.flagsChanged.rawValue) | (1 << CGEventType.keyDown.rawValue)
+            | (1 << CGEventType.keyUp.rawValue)
 
-            // 他のキーが押されていない = Commandの単押し → 切り替え発動
-            if !otherKeyPressedDuringCommand {
-                switch currentCommandSide {
-                case .left:
-                    switchToEnglish()
-                case .right:
-                    switchToJapanese()
-                case .none:
-                    break
-                }
-            }
-
-            currentCommandSide = .none
+        let callback: CGEventTapCallBack = { proxy, type, event, refcon in
+            guard let refcon = refcon else { return Unmanaged.passRetained(event) }
+            let interceptor = Unmanaged<EventInterceptor>.fromOpaque(refcon).takeUnretainedValue()
+            return interceptor.handleEvent(proxy: proxy, type: type, event: event)
         }
 
-        return Unmanaged.passRetained(event)
-    }
-
-    // keyDown / keyUp イベント:
-    // Commandが押されている最中に他のキーが押された場合、
-    // ショートカット操作（Command+C 等）なので単押しとみなさないようフラグを立てる。
-    if commandIsDown {
-        otherKeyPressedDuringCommand = true
-    }
-
-    return Unmanaged.passRetained(event)
-}
-
-// MARK: - Main
-
-/// 監視対象のイベント種別をビットマスクで指定。
-/// - flagsChanged: 修飾キー（Command等）の押下/解放
-/// - keyDown / keyUp: 通常キーの押下/解放（コンビネーション検出用）
-let eventMask: CGEventMask =
-    (1 << CGEventType.flagsChanged.rawValue) | (1 << CGEventType.keyDown.rawValue)
-    | (1 << CGEventType.keyUp.rawValue)
-
-/// CGEventTap の作成を試みる。権限がない場合はプロンプトを表示し、5秒間隔でリトライする。
-/// CGEvent.tapCreate は権限がないと nil を返すため、これを権限判定に利用する。
-var tap: CFMachPort!
-
-if let t = CGEvent.tapCreate(
-    tap: .cgSessionEventTap,
-    place: .headInsertEventTap,
-    options: .listenOnly,
-    eventsOfInterest: eventMask,
-    callback: eventCallback,
-    userInfo: nil
-) {
-    tap = t
-} else {
-    // 権限がないのでプロンプトを表示してリトライ
-    promptInputMonitoringPermission()
-
-    while true {
-        sleep(5)
         if let t = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
             options: .listenOnly,
             eventsOfInterest: eventMask,
-            callback: eventCallback,
-            userInfo: nil
+            callback: callback,
+            userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
         ) {
-            tap = t
-            break
+            self.tap = t
+        } else {
+            promptInputMonitoringPermission()
+
+            // 権限が付与されるまで待機（Phase 6でAppKitのライフサイクルに統合予定）
+            while true {
+                sleep(5)
+                if let t = CGEvent.tapCreate(
+                    tap: .cgSessionEventTap,
+                    place: .headInsertEventTap,
+                    options: .listenOnly,
+                    eventsOfInterest: eventMask,
+                    callback: callback,
+                    userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+                ) {
+                    self.tap = t
+                    break
+                }
+            }
+        }
+
+        if let tap = self.tap {
+            runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+            CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
+            CGEvent.tapEnable(tap: tap, enable: true)
+        }
+
+        setupHIDManager()
+    }
+
+    private func handleEvent(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent)
+        -> Unmanaged<CGEvent>?
+    {
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let tap = self.tap {
+                CGEvent.tapEnable(tap: tap, enable: true)
+            }
+            return Unmanaged.passRetained(event)
+        }
+
+        let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+        let rawFlags = event.flags.rawValue
+
+        // --- 調査用ログ ---
+        // ターミナルから起動した時にどのキーが検知されたかを出力します
+        if type == .flagsChanged || type == .keyDown || type == .keyUp {
+            print(
+                "Detected event type: \(type.rawValue), keyCode: \(keyCode), rawFlags: \(rawFlags)")
+        }
+
+        let leftCommandBit: UInt64 = 0x08
+        let rightCommandBit: UInt64 = 0x10
+        let commandMask = CGEventFlags.maskCommand.rawValue
+        let isCommand = (rawFlags & commandMask) != 0
+
+        if type == .flagsChanged {
+            if currentMode == .command {
+                if isCommand && !commandIsDown {
+                    commandIsDown = true
+                    otherKeyPressedDuringCommand = false
+
+                    let isLeft = (rawFlags & leftCommandBit) != 0
+                    let isRight = (rawFlags & rightCommandBit) != 0
+
+                    if isLeft && !isRight {
+                        currentCommandSide = .left
+                    } else if isRight && !isLeft {
+                        currentCommandSide = .right
+                    } else {
+                        currentCommandSide = .none
+                    }
+                } else if !isCommand && commandIsDown {
+                    commandIsDown = false
+
+                    if !otherKeyPressedDuringCommand {
+                        switch currentCommandSide {
+                        case .left:
+                            switchToEnglish()
+                        case .right:
+                            switchToJapanese()
+                        case .none:
+                            break
+                        }
+                    }
+                    currentCommandSide = .none
+                }
+            }
+            return Unmanaged.passRetained(event)
+        }
+        if commandIsDown {
+            otherKeyPressedDuringCommand = true
+        }
+
+        return Unmanaged.passRetained(event)
+    }
+
+    private func setupHIDManager() {
+        hidManager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
+        guard let hidManager = hidManager else { return }
+
+        let keyboardDict: [String: Any] = [
+            kIOHIDDeviceUsagePageKey as String: kHIDPage_GenericDesktop,
+            kIOHIDDeviceUsageKey as String: kHIDUsage_GD_Keyboard,
+        ]
+        IOHIDManagerSetDeviceMatching(hidManager, keyboardDict as CFDictionary)
+
+        let callback: IOHIDValueCallback = { context, result, sender, value in
+            guard let context = context else { return }
+            let interceptor = Unmanaged<EventInterceptor>.fromOpaque(context).takeUnretainedValue()
+            interceptor.handleHIDValue(value: value)
+        }
+
+        IOHIDManagerRegisterInputValueCallback(
+            hidManager, callback, UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+        )
+        IOHIDManagerScheduleWithRunLoop(
+            hidManager, CFRunLoopGetCurrent(), CFRunLoopMode.commonModes.rawValue)
+        IOHIDManagerOpen(hidManager, IOOptionBits(kIOHIDOptionsTypeNone))
+    }
+
+    private func handleHIDValue(value: IOHIDValue) {
+        if currentMode != .capsLock { return }
+
+        let element = IOHIDValueGetElement(value)
+        let usagePage = IOHIDElementGetUsagePage(element)
+        let usage = IOHIDElementGetUsage(element)
+
+        // 0x07 is Keyboard, 0x39 is CapsLock
+        if usagePage == 0x07 && usage == 0x39 {
+            let intValue = IOHIDValueGetIntegerValue(value)
+
+            // 1 is Down, 0 is Up
+            if intValue == 1 {
+                let currentTime = CFAbsoluteTimeGetCurrent()
+                let timeSinceLastPress = currentTime - lastCapsLockPressTime
+
+                if timeSinceLastPress <= doublePressThreshold {
+                    // ダブルプレス：日本語へ切り替え
+                    switchToJapanese()
+                    // 連続タップで誤爆しないようにリセット
+                    lastCapsLockPressTime = 0
+                } else {
+                    // シングルプレス：英語へ切り替え
+                    switchToEnglish()
+                    lastCapsLockPressTime = currentTime
+                }
+            }
         }
     }
 }
 
-/// 作成した tap を保持し、コールバック内から再有効化できるようにする。
-Tap.machPort = tap
-
-/// CFMachPort を CFRunLoop に接続するためのソースを作成し、現在の RunLoop に追加する。
-/// commonModes に追加することで、モーダルパネル表示中なども含め常にイベントを受信する。
-let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
-CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
-CGEvent.tapEnable(tap: tap, enable: true)
-
-/// RunLoop を起動し、イベント監視を永続的に実行する。
-/// 以前は CFRunLoopRun() を使用していたが、GUIアプリ化に伴い NSApplication を起動する。
+// MARK: - App Delegate
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
-
-    // UIの各項目への参照を保持
     var commandMenuItem: NSMenuItem!
     var capsLockMenuItem: NSMenuItem!
+
+    let interceptor: EventInterceptor
+
+    init(interceptor: EventInterceptor) {
+        self.interceptor = interceptor
+        super.init()
+    }
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         print("EnJaSwitcher GUI started.")
@@ -247,19 +285,41 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // メニューをステータスアイテムに紐付け
         statusItem.menu = menu
+
+        // 状態の復元 (UserDefaults)
+        let savedMethod = UserDefaults.standard.string(forKey: "switchingMethod")
+        if savedMethod == "capsLock" {
+            commandMenuItem.state = .off
+            capsLockMenuItem.state = .on
+            interceptor.currentMode = .capsLock
+        } else {
+            // デフォルトはCommand方式
+            commandMenuItem.state = .on
+            capsLockMenuItem.state = .off
+            interceptor.currentMode = .command
+        }
     }
 
-    // メニュー項目がクリックされたときのアクション
     @objc func switchMethodChanged(_ sender: NSMenuItem) {
-        // 選択された項目にチェックマークを入れ、それ以外を外す
         commandMenuItem.state = (sender == commandMenuItem) ? .on : .off
         capsLockMenuItem.state = (sender == capsLockMenuItem) ? .on : .off
 
-        // 将来のフェーズで、ここで実際の切り替えロジックを切り替える
-        print("Selected switching method changed to: \(sender.title)")
+        if sender == commandMenuItem {
+            interceptor.currentMode = .command
+            UserDefaults.standard.set("command", forKey: "switchingMethod")
+        } else {
+            interceptor.currentMode = .capsLock
+            UserDefaults.standard.set("capsLock", forKey: "switchingMethod")
+        }
     }
 }
+
+// MARK: - Main
+
+let interceptor = EventInterceptor()
+interceptor.start()
+
 let app = NSApplication.shared
-let delegate = AppDelegate()
+let delegate = AppDelegate(interceptor: interceptor)
 app.delegate = delegate
 app.run()

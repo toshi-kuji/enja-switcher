@@ -42,16 +42,16 @@ Transform the current `enja-switcher` into a native macOS GUI application. The a
 - [x] Implement action methods for when the user clicks a menu item to update the active method.
 
 ### Phase 4: Core Logic Integration & Refactoring
-- [ ] Refactor the existing `CGEventTap` logic from `main.swift` into a dedicated class (e.g., `EventInterceptor`).
-- [ ] Adapt the `eventMask` to also listen for CapsLock events if necessary.
-- [ ] Implement the two distinct interception strategies:
+- [x] Refactor the existing `CGEventTap` logic from `main.swift` into a dedicated class (e.g., `EventInterceptor`).
+- [x] Adapt the `eventMask` to also listen for CapsLock events if necessary.
+- [x] Implement the two distinct interception strategies:
   - **Command Key Strategy:** Existing logic (detect lone presses of Left/Right Command).
   - **CapsLock Strategy:** Detect single vs. double presses of CapsLock using a timer/timestamp comparison.
-- [ ] Connect the UI selection to the interceptor so it dynamically changes its behavior when the user selects a different option.
+- [x] Connect the UI selection to the interceptor so it dynamically changes its behavior when the user selects a different option.
 
 ### Phase 5: State Persistence
-- [ ] Use `UserDefaults` to store the selected switching method.
-- [ ] On app launch, read from `UserDefaults` to restore the previously selected method and update the UI checkmarks and interceptor state accordingly.
+- [x] Use `UserDefaults` to store the selected switching method.
+- [x] On app launch, read from `UserDefaults` to restore the previously selected method and update the UI checkmarks and interceptor state accordingly.
 
 ### Phase 6: Permissions Handling (Accessibility) Refinement
 - [ ] Integrate the existing `promptInputMonitoringPermission()` and `CGEvent.tapCreate` retry loop gracefully into the `AppKit` lifecycle. Ensure the UI remains responsive while waiting for permissions.

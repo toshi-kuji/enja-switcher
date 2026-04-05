@@ -27,12 +27,19 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
     <!-- Hero -->
     <section class="hero" id="hero">
       <div class="container">
-        <h1 class="hero-title">EnJaSwitcher</h1>
-        <p class="hero-subtitle">{t.hero.headline}</p>
-        <div class="hero-art" aria-label={isJa ? 'アプリのスクリーンショット' : 'App screenshot'}>
-          <div class="hero-art-placeholder">Screenshot placeholder</div>
+        <div class="hero-inner">
+          <div class="hero-art">
+            <img src={`${base}icon.svg`} alt="EnJaSwitcher" class="hero-icon" />
+          </div>
+          <div class="hero-text">
+            <h1 class="hero-title">EnJaSwitcher</h1>
+            <p class="hero-subtitle">{t.hero.headline}</p>
+          </div>
         </div>
-        <a href="#download" class="btn-download">{t.hero.download}</a>
+        <div class="hero-action">
+          <a href={`${base}EnJaSwitcher.app.zip`} class="btn-download">{t.hero.download}</a>
+          <p class="hero-meta">{isJa ? 'macOS 13+ に対応' : 'Supports macOS 13+'} | <a href="https://github.com/toshi-kuji/enja-switcher" target="_blank" rel="noopener noreferrer">{isJa ? 'GitHub はこちら' : 'View on GitHub'}</a></p>
+        </div>
       </div>
     </section>
 
@@ -118,51 +125,85 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
     }
 
     .hero {
-      text-align: center;
       padding: 4rem 1.5rem 3rem;
     }
 
+    .hero-inner {
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+      justify-content: center;
+    }
+
+    .hero-icon {
+      width: 220px;
+      height: 220px;
+      flex-shrink: 0;
+      animation: dissolveIn 1.2s ease-out both;
+    }
+
+    @keyframes dissolveIn {
+      0% {
+        opacity: 0;
+        filter: blur(12px);
+        transform: scale(0.9);
+      }
+      100% {
+        opacity: 1;
+        filter: blur(0);
+        transform: scale(1);
+      }
+    }
+
+    .hero-text {
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
     .hero-title {
-      font-size: 2.5rem;
+      font-size: 2.8rem;
       font-weight: 700;
       letter-spacing: -0.02em;
+      color: #1a3d5c;
+      line-height: 1.1;
     }
 
     .hero-subtitle {
-      margin-top: 0.75rem;
-      font-size: 1.25rem;
-      color: #6e6e73;
+      margin-top: 0.5rem;
+      font-size: 1.15rem;
+      color: #3a8fb7;
+      line-height: 1.4;
     }
 
-    .hero-art {
-      margin: 2rem auto;
-      max-width: 36rem;
-    }
-
-    .hero-art-placeholder {
-      background: #f5f5f7;
-      border: 2px dashed #d2d2d7;
-      border-radius: 12px;
-      padding: 4rem 2rem;
-      color: #8e8e93;
-      font-size: 0.875rem;
+    .hero-action {
+      margin-top: 2rem;
+      text-align: center;
     }
 
     .btn-download {
       display: inline-block;
-      margin-top: 1rem;
+      width: 50%;
       padding: 0.75rem 2rem;
-      background: #0066cc;
+      background: linear-gradient(135deg, #5cc4d8, #3a8fb7);
       color: #fff;
       border-radius: 8px;
       font-size: 1.05rem;
       font-weight: 600;
-      transition: background 0.2s;
+      text-align: center;
+      transition: opacity 0.2s;
     }
 
     .btn-download:hover {
-      background: #0055b3;
+      opacity: 0.85;
       text-decoration: none;
+    }
+
+    .hero-meta {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #5a8a9e;
     }
 
     .section-title {
@@ -172,7 +213,7 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
     }
 
     .section-desc {
-      color: #6e6e73;
+      color: #5a8a9e;
       margin-bottom: 1.5rem;
     }
 
@@ -181,7 +222,7 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
     }
 
     section:nth-child(even) {
-      background: #f5f5f7;
+      background: #eaf6fa;
     }
 
     .features-grid {
@@ -204,7 +245,7 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
 
     .feature-card p {
       font-size: 0.95rem;
-      color: #6e6e73;
+      color: #5a8a9e;
     }
 
     .steps {
@@ -227,7 +268,7 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
       top: 0;
       width: 1.75rem;
       height: 1.75rem;
-      background: #0066cc;
+      background: #3a8fb7;
       color: #fff;
       border-radius: 50%;
       display: flex;
@@ -244,7 +285,7 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
 
     .step p {
       font-size: 0.95rem;
-      color: #6e6e73;
+      color: #5a8a9e;
     }
 
     .permissions-list {
@@ -261,7 +302,7 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
     }
 
     .faq-item {
-      border-bottom: 1px solid #e0e0e0;
+      border-bottom: 1px solid #c8e2ec;
       padding: 1rem 0;
     }
 
@@ -272,11 +313,20 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
 
     .faq-item dd {
       margin: 0;
-      color: #6e6e73;
+      color: #5a8a9e;
       font-size: 0.95rem;
     }
 
     @media (max-width: 600px) {
+      .hero-inner {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .hero-text {
+        text-align: center;
+      }
+
       .hero-title {
         font-size: 1.75rem;
       }

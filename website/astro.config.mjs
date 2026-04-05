@@ -4,6 +4,7 @@ import { defineConfig } from 'astro/config';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://toshi-kuji.github.io',
-  base: '/enja-switcher',
+  base: '/enja-switcher/',
+  trailingSlash: 'always',
   output: 'static',
 });

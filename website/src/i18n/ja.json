@@ -138,11 +138,11 @@
       },
       {
         "title": "Apple 公証について",
-        "text": "本アプリは Apple 公証（Notarization）を受けていません。ダウンロード後に macOS の Gatekeeper 警告が表示される場合があります。インストール手順に従って回避してください。"
+        "text": "本アプリは Apple 公証（Notarization）を受けていないため、初回起動時に追加の手順が必要です。インストール手順に従って回避してください。"
       },
       {
         "title": "将来の互換性について",
-        "text": "本アプリは macOS の CGEventTap および IOHIDManager API を使用しています。macOS のセキュリティポリシーの変更により、将来これらの API が制限され、アプリが動作しなくなる可能性があります。"
+        "text": "本アプリは macOS の CGEventTap および IOHIDManager API を使用しています。macOS のセキュリティポリシーが大幅に変更された場合、これらの API が影響を受ける可能性があります。"
       },
       {
         "title": "プライバシーについて",

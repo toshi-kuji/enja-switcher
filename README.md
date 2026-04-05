@@ -1,4 +1,298 @@
-# enja-switcher
+# enja-switcher (English)
+
+A macOS menu bar resident app (input source switcher) that lets you choose between two switching methods from the menu bar. Select your preferred method from the "E/J" icon in the menu bar.
+
+## Table of Contents
+
+- [Switching Methods](#switching-methods)
+- [Features](#features)
+- [Specifications](#specifications)
+- [App Structure](#app-structure)
+- [Installation](#installation)
+- [Build & Update (For Developers)](#build--update-for-developers)
+- [Startup Registration (LaunchAgent)](#startup-registration-launchagent)
+- [How to Stop](#how-to-stop)
+- [Uninstallation](#uninstallation)
+- [Troubleshooting](#troubleshooting)
+- [Disclaimer](#disclaimer)
+
+## Switching Methods
+
+### Method 1: Left/Right Command (Default)
+Assigns a fixed language to each Command key.
+- **Left Command single press** → English (ABC)
+- **Right Command single press** → Japanese (Hiragana)
+
+### Method 2: CapsLock (Single/Double)
+Reliably switches languages with a single key, regardless of the current state.
+- **CapsLock single press (once)** → English (ABC)
+- **CapsLock double press (quickly twice)** → Japanese (Hiragana)
+
+> **Required setting when using the CapsLock method**
+> To prevent conflicts with macOS's built-in "Caps Lock" function (green light on), go to **System Settings > Keyboard > Keyboard Shortcuts > Modifier Keys** and set the "Caps Lock key" assignment to **"No Action"**. (Since this app uses its own hardware monitoring, the switching will work correctly even with the "No Action" setting.)
+
+## Features
+
+- **Switch directly to the desired language without worrying about the current input state.** macOS's standard `Ctrl+Space` or `Fn` are toggle-based, requiring you to be aware of the current language. With this tool, each key maps directly to one language.
+- **No external library dependencies.** Runs with only the `.app` bundle and a LaunchAgent plist file, eliminating the need to install general-purpose tools like Karabiner-Elements.
+- **Works around macOS's input source switching bug.** macOS has a long-standing bug where switching to Japanese input from the background via the API (`TISSelectInputSource`) changes the menu bar icon but not the actual input state. This app uses **virtual emulation of JIS keyboard "Eisuu" key (102) and "Kana" key (104) press events** instead of the system API, achieving instant and reliable switching in any state.
+
+## Specifications
+
+| Item | Details |
+|------|---------|
+| Target OS | macOS 13 or later (Apple Silicon / Intel) |
+| Runtime dependency | None (Swift standard library is built into the OS) |
+| Build tool | `swiftc` (Xcode Command Line Tools) |
+| Distribution format | `.app` bundle (background app that does not appear in the Dock) |
+| Detection method | `CGEventTap` (Command monitoring) and `IOHIDManager` (CapsLock monitoring) |
+| Settings persistence | Saves the selected switching method using `UserDefaults` |
+| Switching condition | Command key single press, or CapsLock single/double press |
+| Combination key ignored | Switching does not trigger during combination operations such as Command+C |
+| Input source switching | Virtual keycode dispatch (Left Cmd: `102` Eisuu, Right Cmd: `104` Kana) |
+| Required permissions | **Accessibility** and **Input Monitoring** |
+| Auto-start management | Allow in the background (System Settings > General > Login Items) |
+
+## App Structure
+
+The app consists of a single binary compiled with `swiftc`, wrapped in an `.app` bundle. By setting `LSUIElement` in `Info.plist`, it runs as a **menu bar resident app (Agent App) that does not appear in the Dock or in Cmd+Tab**.
+
+### File Structure
+
+```
+enja-switcher/
+  main.swift                          <- Source code
+  AppIcon.icns                        <- App icon (source)
+  EnJaSwitcher.app/
+    Contents/
+      Info.plist                      <- App settings (background operation)
+      MacOS/
+        enja-switcher                 <- Compiled binary
+      Resources/
+        AppIcon.icns                  <- App icon
+```
+
+### macOS Permissions & System Settings Display
+
+Since this app sends virtual keys and reads keyboard events, macOS security features require the following permissions.
+
+| Location | Reason |
+|----------|--------|
+| **System Settings > Privacy & Security > Accessibility** | Required to send virtual "Eisuu/Kana" key press events to the system using `CGEvent`. |
+| **System Settings > Privacy & Security > Input Monitoring** | Required to read keyboard input state via `CGEventTap` (Command monitoring) and `IOHIDManager` (CapsLock monitoring). |
+| **System Settings > General > Login Items > Allow in the Background** | Indicates that auto-start via a LaunchAgent plist is registered. On macOS 13 and later, processes registered via LaunchAgent appear here. |
+
+## Installation
+
+If this is your first time using the app, follow these steps in order.
+
+### Step 1: Check Prerequisites
+
+Verify that Xcode Command Line Tools are installed.
+
+```bash
+xcode-select --version
+```
+
+If not installed:
+
+```bash
+xcode-select --install
+```
+
+### Step 2: Clone the Repository
+
+```bash
+git clone https://github.com/toshi-kuji/enja-switcher.git
+cd enja-switcher
+```
+
+### Step 3: Create a Self-Signed Certificate
+
+To avoid having to reconfigure macOS permissions (Accessibility and Input Monitoring) every time the app is updated, sign it with a self-signed certificate. As long as you keep signing with the same certificate, permissions are preserved after rebuilds.
+
+**Steps to create a certificate in Keychain Access:**
+
+1. Open the **Keychain Access** app (search for "Keychain Access" in Spotlight)
+2. From the menu bar, select **Keychain Access > Certificate Assistant > Create a Certificate...**
+3. Create with the following settings:
+   - **Name**: `EnJaSwitcher Dev`
+   - **Identity Type**: Self-Signed Root
+   - **Certificate Type**: Code Signing
+4. Click "Create"
+
+> This step only needs to be done once. The created certificate is saved in the Keychain and can be reused for subsequent builds.
+
+### Step 4: Build, Sign & Deploy
+
+```bash
+swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
+mkdir -p EnJaSwitcher.app/Contents/Resources
+cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
+cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
+codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
+cp -r EnJaSwitcher.app /Applications/
+```
+
+### Step 5: First Launch & Grant Permissions
+
+```bash
+open /Applications/EnJaSwitcher.app
+```
+
+On the first launch, macOS will display a dialog. Open **System Settings > Privacy & Security** and enable `EnJaSwitcher` in both of the following:
+
+- **Accessibility** (required for virtual key dispatch)
+- **Input Monitoring** (required for keyboard monitoring)
+
+> **Important**: Always launch the `.app`. Running the binary directly from the terminal will grant permissions to Terminal.app instead, and the app will not work correctly.
+
+### Step 6: Verify Operation
+
+- **Left Command single press** → Switches to English (ABC)
+- **Right Command single press** → Switches to Japanese (Hiragana)
+
+Installation is now complete. To enable auto-start at login, see "[Startup Registration (LaunchAgent)](#startup-registration-launchagent)".
+
+## Build & Update (For Developers)
+
+Run the following steps after modifying the code or when updating the app.
+
+### Stop the Running App
+
+```bash
+pkill -f enja-switcher
+```
+
+### Compile, Sign & Deploy
+
+```bash
+swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
+mkdir -p EnJaSwitcher.app/Contents/Resources
+cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
+cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
+codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
+rm -rf /Applications/EnJaSwitcher.app
+cp -r EnJaSwitcher.app /Applications/
+```
+
+### Launch
+
+```bash
+open /Applications/EnJaSwitcher.app
+```
+
+> **About Signing and Permissions**
+> As long as you sign with the self-signed certificate (`EnJaSwitcher Dev`) created during installation, macOS security permissions (Accessibility and Input Monitoring) **do not need to be reconfigured** after rebuilds. The macOS TCC database identifies apps by their signing identity, so binaries signed with the same certificate are treated as "the same app."
+>
+> **Note**: If you recreate the certificate or build with a different signature, you will need to reconfigure permissions. Go to System Settings > Privacy & Security and **remove `EnJaSwitcher` with the minus button, then re-add it with the plus button** in both "Accessibility" and "Input Monitoring".
+
+## Startup Registration (LaunchAgent)
+
+To enable auto-start at login, create a LaunchAgent plist file.
+
+**To auto-start for the current user only:**
+```bash
+mkdir -p ~/Library/LaunchAgents
+cat << 'EOF' > ~/Library/LaunchAgents/com.local.enja-switcher.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.local.enja-switcher</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Applications/EnJaSwitcher.app/Contents/MacOS/enja-switcher</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>
+EOF
+
+launchctl load ~/Library/LaunchAgents/com.local.enja-switcher.plist
+```
+
+> **Note**: LaunchAgent starts the binary directly via launchd, not through Terminal.app. Permissions are correctly applied to `EnJaSwitcher.app`.
+
+To apply for all users, change the destination to `/Library/LaunchAgents/` and use `sudo` to create the file. However, security permissions (Accessibility and Input Monitoring) must be granted individually for each user.
+
+## How to Stop
+
+Click the "E/J" icon in the menu bar and select **"Quit EnJaSwitcher"** to exit.
+
+If the menu is unresponsive, you can force quit using the following methods.
+
+### Stop via Activity Monitor
+
+1. Open Activity Monitor
+2. Type "enja" in the search field
+3. Select `enja-switcher` and click the "X" button to quit
+
+### Stop via Terminal
+
+```bash
+pkill -f enja-switcher
+```
+
+## Uninstallation
+
+To completely remove this app from your system, follow these steps.
+
+### Step 1: Quit the App Process
+
+Exit from the menu bar, or force quit with the following command.
+```bash
+pkill -f enja-switcher
+```
+
+### Step 2: Remove Auto-Start Configuration
+
+```bash
+launchctl unload ~/Library/LaunchAgents/com.local.enja-switcher.plist 2>/dev/null
+rm -f ~/Library/LaunchAgents/com.local.enja-switcher.plist
+```
+
+### Step 3: Remove the Application
+
+```bash
+rm -rf /Applications/EnJaSwitcher.app
+```
+
+### Step 4: Clean Up Security Permissions (Manual)
+
+Even after removing the app, old permission entries remain in macOS settings.
+1. Open **System Settings > Privacy & Security**.
+2. If `EnJaSwitcher` is in the **Accessibility** list, remove it with the **"-" (minus)** button.
+3. Similarly, remove it from the **Input Monitoring** list.
+
+## Troubleshooting
+
+| Symptom | Solution |
+|---------|----------|
+| **Works in the terminal but not in other apps** | Caused by macOS permission blocking. This should not normally occur with a fixed certificate, but if it does, **remove `EnJaSwitcher` with the minus button and re-add it with the plus button** in both "Accessibility" and "Input Monitoring". |
+| **Switching does not work** | Try resetting permissions (see above). Verify that you are launching with `open /Applications/EnJaSwitcher.app`. |
+| **Does not start after login** | Check the process status with `launchctl list \| grep enja`. Verify that the plist file exists in the correct location. |
+| **Switching stops working after a rebuild** | Check the signing information with `codesign -dvv /Applications/EnJaSwitcher.app`. If not signed with the self-signed certificate (`EnJaSwitcher Dev`), remove and re-add in both "Accessibility" and "Input Monitoring" using the minus and plus buttons. |
+
+## Disclaimer
+
+- This app is open-source software developed by an individual, provided as-is with no warranty.
+- This app has not been notarized by Apple. An additional step is required on first launch (see Installation).
+- If macOS security policies change significantly in the future, the APIs used by this app (`CGEventTap`, `IOHIDManager`) could be affected.
+- Permissions are managed by macOS, and this app does not record or transmit keystroke content.
+
+## Credits
+
+Created by Toshiaki Kujime.
+
+---
+
+# enja-switcher（日本語）
 
 メニューバーから2つの切り替え方式を選択できるmacOS常駐アプリ（入力ソース切り替えツール）。
 メニューバーの「E/J」アイコンから好みの方式を選択できます。
@@ -62,15 +356,15 @@
 
 ```
 enja-switcher/
-  main.swift                          ← ソースコード
-  AppIcon.icns                        ← アプリアイコン（ソース）
+  main.swift                          <- ソースコード
+  AppIcon.icns                        <- アプリアイコン（ソース）
   EnJaSwitcher.app/
     Contents/
-      Info.plist                      ← アプリ設定（バックグラウンド動作指定）
+      Info.plist                      <- アプリ設定（バックグラウンド動作指定）
       MacOS/
-        enja-switcher                 ← コンパイル済みバイナリ
+        enja-switcher                 <- コンパイル済みバイナリ
       Resources/
-        AppIcon.icns                  ← アプリアイコン
+        AppIcon.icns                  <- アプリアイコン
 ```
 
 ### macOSの権限・管理画面での表示
@@ -275,14 +569,18 @@ rm -rf /Applications/EnJaSwitcher.app
 
 | 症状 | 対処法 |
 |------|--------|
-| **ターミナル内では動くが、他のアプリで動かない** | macOSの権限ブロックが原因。「アクセシビリティ」と「入力監視」のリストから `EnJaSwitcher` を**マイナスボタンで削除し、プラスボタンで再追加**する。 |
+| **ターミナル内では動くが、他のアプリで動かない** | macOSの権限ブロックが原因。固定署名であれば通常発生しないが、万一の場合は「アクセシビリティ」と「入力監視」のリストから `EnJaSwitcher` を**マイナスボタンで削除し、プラスボタンで再追加**する。 |
 | **切り替えが動かない** | 権限のリセット（上記）を試す。`open /Applications/EnJaSwitcher.app` で起動しているか確認。 |
 | **ログイン後に起動しない** | `launchctl list \| grep enja` でプロセス状態を確認。plistファイルが正しい場所に存在するか確認。 |
 | **ビルド後に切り替えが動かなくなった** | `codesign -dvv /Applications/EnJaSwitcher.app` で署名情報を確認。自己署名証明書（`EnJaSwitcher Dev`）で署名されていない場合は、「アクセシビリティ」と「入力監視」からマイナスで削除して再追加。 |
 
 ## 免責事項
 
-- 本アプリは個人利用を想定した自作ツールであり、動作保証はありません。
-- 自己署名証明書はローカル環境でのみ有効です。Apple公証（Notarization）を受けていないため、他のMacへの配布には適しません。
-- `CGEventTap` によるキーボードイベントの監視は、macOSのセキュリティポリシーの変更により将来動作しなくなる可能性があります。
+- 本アプリは個人が開発したオープンソースソフトウェアであり、動作保証はありません。
+- Apple公証（Notarization）を受けていないため、初回起動時に追加の手順が必要です（インストール手順を参照）。
+- macOSのセキュリティポリシーが大幅に変更された場合、本アプリが使用するAPI（`CGEventTap`、`IOHIDManager`）が影響を受ける可能性があります。
 - 権限はmacOSが管理しており、本アプリがキー入力の内容を記録・送信することはありません。
+
+## クレジット
+
+作者: Toshiaki Kujime

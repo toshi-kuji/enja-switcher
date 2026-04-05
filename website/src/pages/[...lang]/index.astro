@@ -1,0 +1,297 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import jaJson from '../../i18n/ja.json';
+import enJson from '../../i18n/en.json';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: undefined }, props: { t: jaJson, lang: 'ja' as const } },
+    { params: { lang: 'en' }, props: { t: enJson, lang: 'en' as const } },
+  ];
+}
+
+const { t, lang } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const isJa = lang === 'ja';
+const title = isJa
+  ? 'EnJaSwitcher - macOS 入力言語 切り替えアプリ'
+  : 'EnJaSwitcher - macOS Input Language Switcher';
+const description = isJa
+  ? '左⌘で英語、右⌘で日本語。macOS の入力言語を迷わず切り替えるメニューバーアプリ。'
+  : 'Left ⌘ for English, Right ⌘ for Japanese. A menu bar app that switches macOS input language without guessing.';
+const alternateUrl = isJa ? `${base}en/` : `${base}`;
+---
+
+<Layout {title} {description} {lang} {alternateUrl}>
+  <main>
+    <!-- Hero -->
+    <section class="hero" id="hero">
+      <div class="container">
+        <h1 class="hero-title">EnJaSwitcher</h1>
+        <p class="hero-subtitle">{t.hero.headline}</p>
+        <div class="hero-art" aria-label={isJa ? 'アプリのスクリーンショット' : 'App screenshot'}>
+          <div class="hero-art-placeholder">Screenshot placeholder</div>
+        </div>
+        <a href="#download" class="btn-download">{t.hero.download}</a>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="features">
+      <div class="container">
+        <h2 class="section-title">{t.features.heading}</h2>
+        <div class="features-grid">
+          {t.features.items.map((feature: { title: string; description: string }) => (
+            <div class="feature-card">
+              <h3>{feature.title}</h3>
+              <p>{feature.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- Install -->
+    <section class="install" id="install">
+      <div class="container">
+        <h2 class="section-title">{t.install.heading}</h2>
+        <ol class="steps">
+          {t.install.steps.map((step: { title: string; description: string }) => (
+            <li class="step">
+              <h3>{step.title}</h3>
+              <p>{step.description}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <!-- Permissions -->
+    <section class="permissions" id="permissions">
+      <div class="container">
+        <h2 class="section-title">{t.permissions.heading}</h2>
+        <p class="section-desc">{t.permissions.intro}</p>
+        <ul class="permissions-list">
+          {t.permissions.items.map((item: { name: string; reason: string }) => (
+            <li><strong>{item.name}</strong>: {item.reason}</li>
+          ))}
+        </ul>
+        <p class="section-desc">{t.permissions.privacy}</p>
+      </div>
+    </section>
+
+    <!-- CapsLock -->
+    <section class="capslock" id="capslock">
+      <div class="container">
+        <h2 class="section-title">{t.capslock.heading}</h2>
+        <p class="section-desc">{t.capslock.intro}</p>
+        <ol>
+          {t.capslock.steps.map((step: string) => (
+            <li>{step}</li>
+          ))}
+        </ol>
+        <p class="section-desc">{t.capslock.note}</p>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq" id="faq">
+      <div class="container">
+        <h2 class="section-title">{t.faq.heading}</h2>
+        <dl class="faq-list">
+          {t.faq.items.map((item: { question: string; answer: string }) => (
+            <div class="faq-item">
+              <dt>{item.question}</dt>
+              <dd>{item.answer}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  </main>
+
+  <style>
+    .container {
+      max-width: 48rem;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 4rem 1.5rem 3rem;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-subtitle {
+      margin-top: 0.75rem;
+      font-size: 1.25rem;
+      color: #6e6e73;
+    }
+
+    .hero-art {
+      margin: 2rem auto;
+      max-width: 36rem;
+    }
+
+    .hero-art-placeholder {
+      background: #f5f5f7;
+      border: 2px dashed #d2d2d7;
+      border-radius: 12px;
+      padding: 4rem 2rem;
+      color: #8e8e93;
+      font-size: 0.875rem;
+    }
+
+    .btn-download {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.75rem 2rem;
+      background: #0066cc;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+
+    .btn-download:hover {
+      background: #0055b3;
+      text-decoration: none;
+    }
+
+    .section-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .section-desc {
+      color: #6e6e73;
+      margin-bottom: 1.5rem;
+    }
+
+    section {
+      padding: 3rem 0;
+    }
+
+    section:nth-child(even) {
+      background: #f5f5f7;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+      gap: 1.5rem;
+    }
+
+    .feature-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .feature-card h3 {
+      font-size: 1.15rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-card p {
+      font-size: 0.95rem;
+      color: #6e6e73;
+    }
+
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      padding: 0;
+    }
+
+    .step {
+      counter-increment: step;
+      position: relative;
+      padding-left: 2.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .step::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1.75rem;
+      height: 1.75rem;
+      background: #0066cc;
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .step h3 {
+      font-size: 1.05rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .step p {
+      font-size: 0.95rem;
+      color: #6e6e73;
+    }
+
+    .permissions-list {
+      padding-left: 1.25rem;
+    }
+
+    .permissions-list li {
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .faq-list {
+      margin: 0;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid #e0e0e0;
+      padding: 1rem 0;
+    }
+
+    .faq-item dt {
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+
+    .faq-item dd {
+      margin: 0;
+      color: #6e6e73;
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 600px) {
+      .hero-title {
+        font-size: 1.75rem;
+      }
+
+      .hero-subtitle {
+        font-size: 1.05rem;
+      }
+
+      .section-title {
+        font-size: 1.35rem;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</Layout>

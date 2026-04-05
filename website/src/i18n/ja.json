@@ -1,0 +1,147 @@
+{
+  "hero": {
+    "appName": "EnJaSwitcher",
+    "headline": "macOS 入力言語、切り替えアプリ（英語 ↔ 日本語）",
+    "download": "ダウンロード",
+    "langSwitch": "English",
+    "langSwitchHref": "/en/"
+  },
+  "features": {
+    "heading": "特徴",
+    "items": [
+      {
+        "title": "迷わない",
+        "description": "左⌘ = 英語 / 右⌘ = 日本語。CapsLock 1回 = 英語 / 2回 = 日本語。"
+      },
+      {
+        "title": "すぐ使える",
+        "description": "権限を許可するだけ。メニューバーから方式を選んですぐ使える。"
+      },
+      {
+        "title": "最新macOSに対応",
+        "description": "macOS標準APIのみで動作。OSアップデートに強く、安定。"
+      }
+    ]
+  },
+  "install": {
+    "heading": "インストール手順",
+    "steps": [
+      {
+        "title": "ステップ 1: ダウンロード",
+        "description": "上のダウンロードボタン、または GitHub Releases ページから最新の EnJaSwitcher.app.zip をダウンロードします。"
+      },
+      {
+        "title": "ステップ 2: Gatekeeper の回避",
+        "description": "本アプリは Apple 公証（Notarization）を受けていないため、ダウンロード後にそのまま開くと macOS が警告を表示します。以下のいずれかの方法で回避してください。",
+        "options": [
+          {
+            "label": "方法 A: ターミナルで quarantine 属性を削除",
+            "command": "xattr -cr ~/Downloads/EnJaSwitcher.app"
+          },
+          {
+            "label": "方法 B: 右クリックから開く",
+            "detail": "EnJaSwitcher.app を右クリック（または Control+クリック）し、「開く」を選択します。確認ダイアログが表示されたら「開く」をクリックします。"
+          }
+        ]
+      },
+      {
+        "title": "ステップ 3: アプリケーションフォルダに移動",
+        "description": "EnJaSwitcher.app を /Applications フォルダにドラッグ＆ドロップで移動します。"
+      },
+      {
+        "title": "ステップ 4: 起動",
+        "description": "Applications フォルダの EnJaSwitcher.app をダブルクリックして起動します。メニューバーに「E/J」アイコンが表示されれば正常に起動しています。"
+      },
+      {
+        "title": "ステップ 5: 権限の付与",
+        "description": "初回起動時に macOS のダイアログが表示されます。「システム設定 > プライバシーとセキュリティ」を開き、以下の2箇所で EnJaSwitcher を許可（オン）してください。",
+        "permissions": [
+          "アクセシビリティ（仮想キー送信に必要）",
+          "入力監視（キーボード監視に必要）"
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "heading": "権限について",
+    "intro": "本アプリはキーボード操作を読み取り、仮想キーを送信するため、macOS のセキュリティ機能により以下の権限が必要です。",
+    "items": [
+      {
+        "name": "アクセシビリティ",
+        "reason": "仮想的な「英数/かな」キー押下イベントをシステムに送信するために必要です。"
+      },
+      {
+        "name": "入力監視",
+        "reason": "Command キーおよび CapsLock の押下状態を読み取るために必要です。"
+      }
+    ],
+    "privacy": "本アプリがキー入力の内容を記録・送信することはありません。権限は macOS が管理しており、アプリはキーの種類（Command / CapsLock）のみを判定しています。ソースコードは GitHub で全文公開しています。"
+  },
+  "capslock": {
+    "heading": "CapsLock 方式の設定",
+    "intro": "CapsLock 方式を使用する場合、macOS 標準の「大文字固定」機能と競合するため、以下の設定が必要です。",
+    "steps": [
+      "「システム設定」を開く",
+      "「キーボード」>「キーボードショートカット」>「修飾キー」を開く",
+      "「Caps Lock キー」の割り当てを「アクションなし」に変更する"
+    ],
+    "note": "「アクションなし」に設定しても、本アプリは独自のハードウェア監視を使用しているため、CapsLock による切り替えは正常に動作します。"
+  },
+  "faq": {
+    "heading": "よくある質問",
+    "items": [
+      {
+        "question": "切り替えが動かない",
+        "answer": "「システム設定 > プライバシーとセキュリティ」で「アクセシビリティ」と「入力監視」の両方で EnJaSwitcher が許可されているか確認してください。許可済みなのに動かない場合は、一度マイナスボタンで削除してからプラスボタンで再追加してください。"
+      },
+      {
+        "question": "「開発元が未確認」と表示されて開けない",
+        "answer": "Apple 公証を受けていないアプリのため表示されます。ターミナルで xattr -cr /Applications/EnJaSwitcher.app を実行するか、右クリック >「開く」で起動してください。"
+      },
+      {
+        "question": "ログイン時に自動起動したい",
+        "answer": "「システム設定 > 一般 > ログイン項目」で EnJaSwitcher を追加してください。または LaunchAgent を設定する方法もあります（詳細は GitHub の README を参照）。"
+      },
+      {
+        "question": "アンインストールしたい",
+        "answer": "EnJaSwitcher.app を Applications フォルダから削除してください。その後「システム設定 > プライバシーとセキュリティ」の「アクセシビリティ」と「入力監視」のリストから EnJaSwitcher を削除すると、権限情報もクリーンアップできます。"
+      }
+    ]
+  },
+  "footer": {
+    "license": "ライセンス",
+    "licenseHref": "/license/",
+    "disclaimer": "免責事項",
+    "disclaimerHref": "/disclaimer/",
+    "sponsors": "開発を支援する",
+    "sponsorsHref": "https://github.com/sponsors/toshi-kuji",
+    "feedback": "フィードバックを送る",
+    "feedbackHref": "https://docs.google.com/forms/",
+    "copyright": "© 2026 Toshiaki Kujime"
+  },
+  "license": {
+    "heading": "ライセンス",
+    "text": "MIT License\n\nCopyright (c) 2026 Toshiaki Kujime\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
+  },
+  "disclaimer": {
+    "heading": "免責事項",
+    "items": [
+      {
+        "title": "動作保証について",
+        "text": "本アプリは個人が開発したオープンソースソフトウェアであり、動作保証はありません（AS IS）。使用により生じたいかなる損害についても、開発者は責任を負いません。"
+      },
+      {
+        "title": "Apple 公証について",
+        "text": "本アプリは Apple 公証（Notarization）を受けていません。ダウンロード後に macOS の Gatekeeper 警告が表示される場合があります。インストール手順に従って回避してください。"
+      },
+      {
+        "title": "将来の互換性について",
+        "text": "本アプリは macOS の CGEventTap および IOHIDManager API を使用しています。macOS のセキュリティポリシーの変更により、将来これらの API が制限され、アプリが動作しなくなる可能性があります。"
+      },
+      {
+        "title": "プライバシーについて",
+        "text": "本アプリはキー入力の内容を記録・送信しません。キーボードイベントの監視はキーの種類（Command / CapsLock）の判定のみに使用しています。ソースコードは GitHub で全文公開しています。"
+      }
+    ]
+  }
+}

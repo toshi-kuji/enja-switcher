@@ -1,0 +1,147 @@
+{
+  "hero": {
+    "appName": "EnJaSwitcher",
+    "headline": "macOS Input Language Switcher (English ↔ Japanese)",
+    "download": "Download",
+    "langSwitch": "日本語",
+    "langSwitchHref": "/"
+  },
+  "features": {
+    "heading": "Features",
+    "items": [
+      {
+        "title": "No guessing",
+        "description": "Left ⌘ = English / Right ⌘ = Japanese. CapsLock once = English / twice = Japanese."
+      },
+      {
+        "title": "Ready in seconds",
+        "description": "Just grant permissions. Pick your method from the menu bar and start typing."
+      },
+      {
+        "title": "Works with the latest macOS",
+        "description": "Built on macOS standard APIs only. Stable and resilient to OS updates."
+      }
+    ]
+  },
+  "install": {
+    "heading": "Installation",
+    "steps": [
+      {
+        "title": "Step 1: Download",
+        "description": "Click the download button above, or grab the latest EnJaSwitcher.app.zip from the GitHub Releases page."
+      },
+      {
+        "title": "Step 2: Bypass Gatekeeper",
+        "description": "This app is not notarized by Apple, so macOS will show a warning when you first try to open it. Use one of the following methods to bypass it.",
+        "options": [
+          {
+            "label": "Option A: Remove quarantine attribute via Terminal",
+            "command": "xattr -cr ~/Downloads/EnJaSwitcher.app"
+          },
+          {
+            "label": "Option B: Right-click to open",
+            "detail": "Right-click (or Control+click) EnJaSwitcher.app and select \"Open\". When the confirmation dialog appears, click \"Open\"."
+          }
+        ]
+      },
+      {
+        "title": "Step 3: Move to Applications",
+        "description": "Drag and drop EnJaSwitcher.app into your /Applications folder."
+      },
+      {
+        "title": "Step 4: Launch",
+        "description": "Double-click EnJaSwitcher.app in your Applications folder. You should see an \"E/J\" icon appear in the menu bar."
+      },
+      {
+        "title": "Step 5: Grant Permissions",
+        "description": "On first launch, macOS will prompt you for permissions. Open \"System Settings > Privacy & Security\" and enable EnJaSwitcher in the following two sections.",
+        "permissions": [
+          "Accessibility (required for sending virtual key events)",
+          "Input Monitoring (required for monitoring keyboard events)"
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "heading": "About Permissions",
+    "intro": "This app reads keyboard events and sends virtual key presses. macOS security requires the following permissions.",
+    "items": [
+      {
+        "name": "Accessibility",
+        "reason": "Required to send virtual Eisuu/Kana key press events to the system."
+      },
+      {
+        "name": "Input Monitoring",
+        "reason": "Required to detect Command key and CapsLock key presses."
+      }
+    ],
+    "privacy": "This app does not record or transmit your keystrokes. Permissions are managed by macOS, and the app only checks the type of key pressed (Command / CapsLock). The full source code is available on GitHub."
+  },
+  "capslock": {
+    "heading": "CapsLock Mode Setup",
+    "intro": "If you use CapsLock mode, you need to disable the default Caps Lock behavior in macOS to prevent conflicts.",
+    "steps": [
+      "Open \"System Settings\"",
+      "Go to \"Keyboard\" > \"Keyboard Shortcuts\" > \"Modifier Keys\"",
+      "Change \"Caps Lock\" to \"No Action\""
+    ],
+    "note": "Even with \"No Action\" set, EnJaSwitcher uses its own hardware-level monitoring, so CapsLock switching will still work correctly."
+  },
+  "faq": {
+    "heading": "FAQ",
+    "items": [
+      {
+        "question": "Switching doesn't work",
+        "answer": "Check that EnJaSwitcher is enabled in both \"Accessibility\" and \"Input Monitoring\" under \"System Settings > Privacy & Security\". If it's already enabled but not working, remove it with the minus button and re-add it with the plus button."
+      },
+      {
+        "question": "\"Unidentified developer\" warning appears",
+        "answer": "This appears because the app is not notarized by Apple. Run xattr -cr /Applications/EnJaSwitcher.app in Terminal, or right-click the app and select \"Open\"."
+      },
+      {
+        "question": "How to launch at login",
+        "answer": "Add EnJaSwitcher in \"System Settings > General > Login Items\". Alternatively, you can set up a LaunchAgent (see the GitHub README for details)."
+      },
+      {
+        "question": "How to uninstall",
+        "answer": "Delete EnJaSwitcher.app from your Applications folder. Then remove EnJaSwitcher from the \"Accessibility\" and \"Input Monitoring\" lists in \"System Settings > Privacy & Security\" to clean up permission entries."
+      }
+    ]
+  },
+  "footer": {
+    "license": "License",
+    "licenseHref": "/en/license/",
+    "disclaimer": "Disclaimer",
+    "disclaimerHref": "/en/disclaimer/",
+    "sponsors": "Support Development",
+    "sponsorsHref": "https://github.com/sponsors/toshi-kuji",
+    "feedback": "Send Feedback",
+    "feedbackHref": "https://docs.google.com/forms/",
+    "copyright": "© 2026 Toshiaki Kujime"
+  },
+  "license": {
+    "heading": "License",
+    "text": "MIT License\n\nCopyright (c) 2026 Toshiaki Kujime\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
+  },
+  "disclaimer": {
+    "heading": "Disclaimer",
+    "items": [
+      {
+        "title": "No Warranty",
+        "text": "This app is open-source software developed by an individual. It is provided as-is with no warranty of any kind. The developer assumes no liability for any damages arising from its use."
+      },
+      {
+        "title": "Apple Notarization",
+        "text": "This app is not notarized by Apple. macOS Gatekeeper may display a warning when you first open it. Please follow the installation instructions to bypass this."
+      },
+      {
+        "title": "Future Compatibility",
+        "text": "This app uses the macOS CGEventTap and IOHIDManager APIs. Changes to macOS security policies may restrict these APIs in the future, potentially causing the app to stop working."
+      },
+      {
+        "title": "Privacy",
+        "text": "This app does not record or transmit your keystrokes. Keyboard event monitoring is used solely to detect key types (Command / CapsLock). The full source code is available on GitHub."
+      }
+    ]
+  }
+}

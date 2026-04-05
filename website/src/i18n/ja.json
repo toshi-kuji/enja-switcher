@@ -10,16 +10,22 @@
     "heading": "特徴",
     "items": [
       {
+        "emoji": "🎯",
         "title": "迷わない",
-        "description": "左⌘ = 英語 / 右⌘ = 日本語。CapsLock 1回 = 英語 / 2回 = 日本語。"
+        "description": "左⌘ = 英語 / 右⌘ = 日本語。\nCapsLock 1回 = 英語 / 2回 = 日本語。",
+        "screenshot": "screenshot-command.png"
       },
       {
+        "emoji": "⚡",
         "title": "すぐ使える",
-        "description": "権限を許可するだけ。メニューバーから方式を選んですぐ使える。"
+        "description": "権限を許可するだけ。\nメニューバーから方式を選んですぐ使える。",
+        "screenshot": "screenshot-menu.png"
       },
       {
+        "emoji": "🛡️",
         "title": "最新macOSに対応",
-        "description": "macOS標準APIのみで動作。OSアップデートに強く、安定。"
+        "description": "macOS標準APIのみで動作。\nOSアップデートに強く、安定。",
+        "screenshot": "screenshot-settings.png"
       }
     ]
   },

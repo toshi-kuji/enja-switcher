@@ -10,16 +10,22 @@
     "heading": "Features",
     "items": [
       {
+        "emoji": "🎯",
         "title": "No guessing",
-        "description": "Left ⌘ = English / Right ⌘ = Japanese. CapsLock once = English / twice = Japanese."
+        "description": "Left ⌘ = English / Right ⌘ = Japanese.\nCapsLock once = English / twice = Japanese.",
+        "screenshot": "screenshot-command.png"
       },
       {
+        "emoji": "⚡",
         "title": "Ready in seconds",
-        "description": "Just grant permissions. Pick your method from the menu bar and start typing."
+        "description": "Just grant permissions.\nPick your method from the menu bar and start typing.",
+        "screenshot": "screenshot-menu.png"
       },
       {
+        "emoji": "🛡️",
         "title": "Works with the latest macOS",
-        "description": "Built on macOS standard APIs only. Stable and resilient to OS updates."
+        "description": "Built on macOS standard APIs only.\nStable and resilient to OS updates.",
+        "screenshot": "screenshot-settings.png"
       }
     ]
   },

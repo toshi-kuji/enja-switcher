@@ -298,10 +298,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // --- セパレーター ---
         menu.addItem(NSMenuItem.separator())
 
+        // --- About This App ---
+        let websiteMenuItem = NSMenuItem(
+            title: "About This App...", action: #selector(openWebsite),
+            keyEquivalent: "")
+        websiteMenuItem.target = self
+        menu.addItem(websiteMenuItem)
+
         // --- Quit ---
         let quitMenuItem = NSMenuItem(
-            title: "Quit EnJaSwitcher", action: #selector(NSApplication.terminate(_:)),
+            title: "Quit EnJaSwitcher", action: #selector(quitApp),
             keyEquivalent: "q")
+        quitMenuItem.target = self
         menu.addItem(quitMenuItem)
 
         // メニューをステータスアイテムに紐付け
@@ -329,9 +337,78 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             interceptor.currentMode = .command
             UserDefaults.standard.set("command", forKey: "switchingMethod")
         } else {
+            let wasAlreadyCapsLock = interceptor.currentMode == .capsLock
             interceptor.currentMode = .capsLock
             UserDefaults.standard.set("capsLock", forKey: "switchingMethod")
+            if !wasAlreadyCapsLock {
+                showCapsLockSetupAlert()
+            }
         }
+    }
+
+    private var capsLockPopover: NSPopover?
+
+    private func showCapsLockSetupAlert() {
+        // Close existing popover if any
+        capsLockPopover?.close()
+
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.animates = true
+
+        let viewController = NSViewController()
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 200))
+
+        let titleField = NSTextField(labelWithString: "CapsLock Mode Setup Required")
+        titleField.font = NSFont.systemFont(ofSize: 13, weight: .bold)
+        titleField.frame = NSRect(x: 16, y: 160, width: 288, height: 20)
+
+        let bodyText = """
+            To use CapsLock mode, disable the default CapsLock \
+            behavior in macOS to prevent conflicts.
+
+            System Settings > Keyboard > Keyboard Shortcuts \
+            > Modifier Keys > Set "Caps Lock key" to "No Action"
+
+            CapsLock switching will still work correctly with \
+            this app's own hardware-level detection.
+            """
+        let bodyField = NSTextField(wrappingLabelWithString: bodyText)
+        bodyField.font = NSFont.systemFont(ofSize: 12)
+        bodyField.textColor = .secondaryLabelColor
+        bodyField.frame = NSRect(x: 16, y: 44, width: 288, height: 110)
+
+        let okButton = NSButton(title: "OK", target: self, action: #selector(closeCapsLockPopover))
+        okButton.bezelStyle = .rounded
+        okButton.frame = NSRect(x: 228, y: 8, width: 76, height: 28)
+        okButton.keyEquivalent = "\r"
+
+        container.addSubview(titleField)
+        container.addSubview(bodyField)
+        container.addSubview(okButton)
+
+        viewController.view = container
+        popover.contentViewController = viewController
+        popover.contentSize = NSSize(width: 320, height: 200)
+
+        capsLockPopover = popover
+
+        if let button = statusItem.button {
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        }
+    }
+
+    @objc func quitApp() {
+        NSApplication.shared.terminate(nil)
+    }
+
+    @objc func openWebsite() {
+        NSWorkspace.shared.open(URL(string: "https://toshi-kuji.github.io/enja-switcher/")!)
+    }
+
+    @objc private func closeCapsLockPopover() {
+        capsLockPopover?.close()
+        capsLockPopover = nil
     }
 }
 

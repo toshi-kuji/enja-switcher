@@ -10,5 +10,6 @@
 
 # Build artifacts
 EnJaSwitcher.app/
+EnJaSwitcher.app.zip
 enja-switcher
 *.o

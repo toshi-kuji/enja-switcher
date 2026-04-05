@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://toshi-kuji.github.io/enja-switcher/sitemap-index.xml

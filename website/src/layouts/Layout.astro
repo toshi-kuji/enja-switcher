@@ -18,6 +18,7 @@ const isJa = lang === 'ja';
 const navLabels = {
   license: isJa ? 'ライセンス' : 'License',
   disclaimer: isJa ? '免責事項' : 'Disclaimer',
+  sponsorEmoji: '☕',
   sponsor: isJa ? '開発を支援する' : 'Sponsor',
   feedback: isJa ? 'フィードバック' : 'Feedback',
   releases: isJa ? '過去のバージョン' : 'Past Releases',
@@ -110,6 +111,11 @@ const disclaimerPath = isJa ? `${base}disclaimer/` : `${base}en/disclaimer/`;
         color: #1a3d5c;
       }
 
+      .sponsor-emoji {
+        font-size: 1.1em;
+        vertical-align: middle;
+      }
+
       /* ===== Footer ===== */
       .site-footer {
         border-top: 1px solid #c8e2ec;
@@ -136,7 +142,7 @@ const disclaimerPath = isJa ? `${base}disclaimer/` : `${base}en/disclaimer/`;
           <li><a href={isJa ? base : `${base}en/`}>EnJaSwitcher</a></li>
           <li><a href={licensePath}>{navLabels.license}</a></li>
           <li><a href={disclaimerPath}>{navLabels.disclaimer}</a></li>
-          <li><a href="https://github.com/sponsors/toshi-kuji" target="_blank" rel="noopener noreferrer">{navLabels.sponsor}</a></li>
+          <li><span class="sponsor-emoji">{navLabels.sponsorEmoji}</span> <a href="https://github.com/sponsors/toshi-kuji" target="_blank" rel="noopener noreferrer">{navLabels.sponsor}</a></li>
           <li><a href="https://docs.google.com/forms/d/e/PLACEHOLDER/viewform" target="_blank" rel="noopener noreferrer">{navLabels.feedback}</a></li>
           <li><a href="https://github.com/toshi-kuji/enja-switcher/releases" target="_blank" rel="noopener noreferrer">{navLabels.releases}</a></li>
           <li><a href={alternateUrl}>{navLabels.switchLang}</a></li>

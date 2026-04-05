@@ -38,7 +38,7 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
         </div>
         <div class="hero-action">
           <a href={`${base}EnJaSwitcher.app.zip`} class="btn-download">{t.hero.download}</a>
-          <p class="hero-meta">{isJa ? 'macOS 13+ に対応' : 'Supports macOS 13+'} | <a href="https://github.com/toshi-kuji/enja-switcher" target="_blank" rel="noopener noreferrer">{isJa ? 'GitHub はこちら' : 'View on GitHub'}</a></p>
+          <p class="hero-meta">macOS 13+ | Free &amp; Open Source | <a href="https://github.com/toshi-kuji/enja-switcher" target="_blank" rel="noopener noreferrer">{isJa ? 'GitHub はこちら' : 'View on GitHub'}</a></p>
         </div>
       </div>
     </section>
@@ -47,14 +47,19 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
     <section class="features" id="features">
       <div class="container">
         <h2 class="section-title">{t.features.heading}</h2>
-        <div class="features-grid">
-          {t.features.items.map((feature: { title: string; description: string }) => (
-            <div class="feature-card">
-              <h3>{feature.title}</h3>
-              <p>{feature.description}</p>
+        {t.features.items.map((feature: { emoji: string; title: string; description: string; screenshot: string }, i: number) => (
+          <div class={`feature-row ${i % 2 === 1 ? 'feature-row--reverse' : ''}`}>
+            <div class="feature-text">
+              <h3><span class="feature-emoji">{feature.emoji}</span> {feature.title}</h3>
+              <div class="feature-desc">
+                <p set:html={feature.description.replace(/\n/g, '<br>')} />
+              </div>
             </div>
-          ))}
-        </div>
+            <div class="feature-screenshot">
+              <div class="screenshot-placeholder">{feature.screenshot}</div>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
 
@@ -195,15 +200,25 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
       transition: opacity 0.2s;
     }
 
+    .btn-download,
+    .btn-download:hover,
+    .btn-download:visited {
+      text-decoration: none;
+    }
+
     .btn-download:hover {
       opacity: 0.85;
-      text-decoration: none;
     }
 
     .hero-meta {
       margin-top: 0.5rem;
       font-size: 0.85rem;
       color: #5a8a9e;
+    }
+
+    .hero-meta a,
+    .hero-meta a:visited {
+      color: #3a8fb7;
     }
 
     .section-title {
@@ -225,27 +240,54 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
       background: #eaf6fa;
     }
 
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-      gap: 1.5rem;
+    .feature-row {
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+      margin-bottom: 2.5rem;
     }
 
-    .feature-card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    .feature-row--reverse {
+      flex-direction: row-reverse;
     }
 
-    .feature-card h3 {
-      font-size: 1.15rem;
-      margin-bottom: 0.5rem;
+    .feature-text {
+      flex: 1;
     }
 
-    .feature-card p {
+    .feature-text h3 {
+      font-size: 1.2rem;
+      margin-bottom: 0.4rem;
+      color: #1a3d5c;
+    }
+
+    .feature-emoji {
+      font-size: 1.4rem;
+      margin-right: 0.25rem;
+    }
+
+    .feature-desc {
+      padding-left: 2rem;
+    }
+
+    .feature-desc p {
       font-size: 0.95rem;
       color: #5a8a9e;
+    }
+
+    .feature-screenshot {
+      flex: 1;
+      max-width: 280px;
+    }
+
+    .screenshot-placeholder {
+      background: #dceef4;
+      border: 2px dashed #a8d4e6;
+      border-radius: 8px;
+      padding: 3rem 1rem;
+      text-align: center;
+      color: #5a8a9e;
+      font-size: 0.8rem;
     }
 
     .steps {
@@ -339,8 +381,13 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
         font-size: 1.35rem;
       }
 
-      .features-grid {
-        grid-template-columns: 1fr;
+      .feature-row,
+      .feature-row--reverse {
+        flex-direction: column;
+      }
+
+      .feature-screenshot {
+        max-width: 100%;
       }
     }
   </style>

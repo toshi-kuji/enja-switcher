@@ -94,18 +94,34 @@ git clone https://github.com/toshi-kuji/enja-switcher.git
 cd enja-switcher
 ```
 
-### ステップ 3: ビルド・署名・配置
+### ステップ 3: 自己署名証明書の作成（初回のみ）
+
+アプリの更新時にmacOSの権限（アクセシビリティ・入力監視）を再設定する手間をなくすため、自己署名証明書で署名します。ad-hoc署名（`--sign -`）ではビルドごとにハッシュが変わり、macOSが「別のアプリ」と判断して権限がリセットされますが、同じ証明書で署名し続ける限り権限は維持されます。
+
+**Keychain Access で証明書を作成する手順:**
+
+1. **Keychain Access** アプリを開く（Spotlight で「Keychain Access」と検索）
+2. メニューバーから **Keychain Access > 証明書アシスタント > 証明書を作成...** を選択
+3. 以下の設定で作成:
+   - **名前**: `EnJaSwitcher Dev`
+   - **固有名のタイプ**: 自己署名ルート
+   - **証明書のタイプ**: コード署名
+4. 「作成」をクリック
+
+> この手順は初回の1回だけ実行すれば十分です。作成した証明書はKeychainに保存され、以降のビルドで繰り返し使用できます。
+
+### ステップ 4: ビルド・署名・配置
 
 ```bash
 swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
 mkdir -p EnJaSwitcher.app/Contents/Resources
 cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
 cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
-codesign --force --sign - EnJaSwitcher.app
+codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
 cp -r EnJaSwitcher.app /Applications/
 ```
 
-### ステップ 4: 初回起動して権限を付与
+### ステップ 5: 初回起動して権限を付与
 
 ```bash
 open /Applications/EnJaSwitcher.app
@@ -118,7 +134,7 @@ open /Applications/EnJaSwitcher.app
 
 > **重要**: 必ず `.app` として起動してください。ターミナルからバイナリを直接実行すると、権限がTerminal.appに付与されてしまい正しく動作しません。
 
-### ステップ 5: 動作確認
+### ステップ 6: 動作確認
 
 - **左Command 単押し** → 英語（ABC）に切り替わる
 - **右Command 単押し** → 日本語（ひらがな）に切り替わる
@@ -127,7 +143,7 @@ open /Applications/EnJaSwitcher.app
 
 ---
 
-## ビルドとアプリ更新時の注意（重要）
+## ビルドとアプリ更新時の手順
 
 ### コンパイル・署名・配置
 
@@ -136,22 +152,19 @@ swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framew
 mkdir -p EnJaSwitcher.app/Contents/Resources
 cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
 cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
-codesign --force --sign - EnJaSwitcher.app
+codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
 rm -rf /Applications/EnJaSwitcher.app
 cp -r EnJaSwitcher.app /Applications/
 ```
 
-> **セキュリティ権限の完全リセットについて（アップデート時）**
-> バイナリを再コンパイルして `/Applications/` に上書き配置した場合、macOSはこれを「過去に許可したものとは別の新しいアプリ」と見なし、**バックグラウンドでの動作をサイレントにブロック**します。
-> この状態になると、権限画面でスイッチが「オン」になっていても動作しません。
+> **自己署名証明書による権限維持について**
+> 初回セットアップで作成した自己署名証明書（`EnJaSwitcher Dev`）で署名している限り、再ビルド・アップデート後もmacOSのセキュリティ権限（アクセシビリティ・入力監視）は**再設定不要**です。macOSの TCC データベースは署名の identity でアプリを識別するため、同じ証明書で署名されたバイナリは「同じアプリ」として扱われます。
 >
-> アプリを更新（再ビルド）した際は、必ず以下の手順で権限を**完全リセット**してください：
+> **注意**: もし証明書を作り直した場合や、ad-hoc署名（`--sign -`）でビルドした場合は、権限の再設定が必要になります。その場合は以下の手順で権限をリセットしてください：
 > 1. システム設定 > プライバシーとセキュリティ > **アクセシビリティ** を開く。
 > 2. リスト内の `EnJaSwitcher` を選択し、下の **「ー（マイナス）」ボタンを押して完全に削除**する。
 > 3. 下の **「＋（プラス）」ボタンを押し**、`/Applications/EnJaSwitcher.app` を選択して追加し直す。
 > 4. システム設定 > プライバシーとセキュリティ > **入力監視** でも、同様に **「ー」で削除してから「＋」で追加**を行う。
->
-> スイッチのオフ/オンだけでは古いキャッシュが残りブロックされ続けるため、必ず「マイナスで削除してプラスで追加」を行ってください。
 
 ## スタートアップ登録（LaunchAgent）
 
@@ -237,11 +250,11 @@ rm -rf /Applications/EnJaSwitcher.app
 - **ターミナル内では動くが、他のアプリで動かない** → macOSの権限ブロックが原因です。「アクセシビリティ」と「入力監視」のリストから `EnJaSwitcher` を**マイナスボタンで削除し、プラスボタンで再追加**してください。
 - **切り替えが動かない** → 権限のリセットを試してください。それでも駄目な場合は `open /Applications/EnJaSwitcher.app` で起動しているか確認してください。
 - **ログイン後に起動しない** → `launchctl list | grep enja` でプロセス状態を確認。plistファイルが正しい場所に存在するか確認。
-- **ビルド後に切り替えが動かなくなった** → 未署名、もしくは更新により別のアプリと判定されています。「アクセシビリティ」と「入力監視」からマイナスボタンで削除して再追加してください。
+- **ビルド後に切り替えが動かなくなった** → 自己署名証明書（`EnJaSwitcher Dev`）で署名されているか確認してください。`codesign -dvv /Applications/EnJaSwitcher.app` で署名情報を確認できます。ad-hoc署名（`--sign -`）や異なる証明書で署名した場合は、「アクセシビリティ」と「入力監視」からマイナスボタンで削除して再追加してください。
 
 ## 免責事項
 
 - 本アプリは個人利用を想定した自作ツールであり、動作保証はない。
-- ad-hoc署名（`codesign --force --sign -`）はローカル環境でのみ有効であり、Apple公証（Notarization）を受けていないため、他のMacへの配布には適さない。
+- 自己署名証明書（`codesign --force --sign "EnJaSwitcher Dev"`）はローカル環境でのみ有効であり、Apple公証（Notarization）を受けていないため、他のMacへの配布には適さない。
 - `CGEventTap` によるキーボードイベントの監視は、macOSのセキュリティポリシーの変更により将来動作しなくなる可能性がある。
 - 権限はmacOSが管理しており、本アプリがキー入力の内容を記録・送信することはない。

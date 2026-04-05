@@ -13,19 +13,19 @@
         "emoji": "🎯",
         "title": "迷わない",
         "description": "左⌘ = 英語 / 右⌘ = 日本語。\nCapsLock 1回 = 英語 / 2回 = 日本語。",
-        "screenshot": "screenshot-command.png"
+        "screenshot": "01.png"
       },
       {
         "emoji": "⚡",
         "title": "すぐ使える",
         "description": "権限を許可するだけ。\nメニューバーから方式を選んですぐ使える。",
-        "screenshot": "screenshot-menu.png"
+        "screenshot": "02.png"
       },
       {
         "emoji": "🛡️",
         "title": "最新macOSに対応",
         "description": "macOS標準APIのみで動作。\nOSアップデートに強く、安定。",
-        "screenshot": "screenshot-settings.png"
+        "screenshot": "03.png"
       }
     ]
   },

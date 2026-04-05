@@ -138,11 +138,11 @@
       },
       {
         "title": "Apple Notarization",
-        "text": "This app is not notarized by Apple. macOS Gatekeeper may display a warning when you first open it. Please follow the installation instructions to bypass this."
+        "text": "This app is not notarized by Apple, so an additional step is required on first launch. Please follow the installation instructions to proceed."
       },
       {
         "title": "Future Compatibility",
-        "text": "This app uses the macOS CGEventTap and IOHIDManager APIs. Changes to macOS security policies may restrict these APIs in the future, potentially causing the app to stop working."
+        "text": "This app uses the macOS CGEventTap and IOHIDManager APIs. If macOS security policies change significantly, these APIs could be affected."
       },
       {
         "title": "Privacy",

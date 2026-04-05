@@ -1,0 +1,140 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  lang: 'ja' | 'en';
+  alternateUrl: string;
+}
+
+const { title, description, lang, alternateUrl } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const siteUrl = 'https://toshi-kuji.github.io/enja-switcher';
+const currentUrl = siteUrl + new URL(Astro.url.pathname, siteUrl).pathname;
+const ogImage = siteUrl + '/og-image.png';
+const alternateLang = lang === 'ja' ? 'en' : 'ja';
+const alternateFull = siteUrl + alternateUrl;
+
+const isJa = lang === 'ja';
+const footerLabels = {
+  license: isJa ? 'ライセンス' : 'License',
+  disclaimer: isJa ? '免責事項' : 'Disclaimer',
+  sponsor: isJa ? '開発を支援する' : 'Sponsor',
+  feedback: isJa ? 'フィードバック' : 'Feedback',
+  switchLang: isJa ? 'English' : '日本語',
+};
+const licensePath = isJa ? `${base}license/` : `${base}en/license/`;
+const disclaimerPath = isJa ? `${base}disclaimer/` : `${base}en/disclaimer/`;
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={currentUrl} />
+    <link rel="icon" href={`${base}favicon.ico`} />
+
+    <!-- hreflang -->
+    <link rel="alternate" hreflang={lang} href={currentUrl} />
+    <link rel="alternate" hreflang={alternateLang} href={alternateFull} />
+
+    <!-- OGP -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:url" content={currentUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content={lang === 'ja' ? 'ja_JP' : 'en_US'} />
+
+    <meta name="generator" content={Astro.generator} />
+
+    <style>
+      /* ===== Reset & Base ===== */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html {
+        font-size: 16px;
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        line-height: 1.7;
+        color: #1d1d1f;
+        background: #fff;
+      }
+
+      a {
+        color: #0066cc;
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      /* ===== Footer ===== */
+      .site-footer {
+        border-top: 1px solid #e0e0e0;
+        padding: 2rem 1.5rem;
+        margin-top: 4rem;
+        text-align: center;
+        font-size: 0.875rem;
+        color: #6e6e73;
+      }
+
+      .footer-links {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem 2rem;
+        list-style: none;
+        margin-bottom: 1rem;
+      }
+
+      .footer-links a {
+        color: #6e6e73;
+      }
+
+      .footer-links a:hover {
+        color: #1d1d1f;
+      }
+
+      .footer-copy {
+        margin-top: 0.5rem;
+      }
+
+      /* ===== Responsive ===== */
+      @media (max-width: 600px) {
+        .footer-links {
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <slot />
+
+    <footer class="site-footer">
+      <nav aria-label={isJa ? 'フッターナビ' : 'Footer navigation'}>
+        <ul class="footer-links">
+          <li><a href={licensePath}>{footerLabels.license}</a></li>
+          <li><a href={disclaimerPath}>{footerLabels.disclaimer}</a></li>
+          <li><a href="https://github.com/sponsors/toshi-kuji" target="_blank" rel="noopener noreferrer">{footerLabels.sponsor}</a></li>
+          <li><a href="https://docs.google.com/forms/d/e/PLACEHOLDER/viewform" target="_blank" rel="noopener noreferrer">{footerLabels.feedback}</a></li>
+          <li><a href={alternateUrl}>{footerLabels.switchLang}</a></li>
+        </ul>
+      </nav>
+      <p class="footer-copy">&copy; 2026 Toshiaki Kujime. MIT License.</p>
+    </footer>
+  </body>
+</html>

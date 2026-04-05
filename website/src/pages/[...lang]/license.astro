@@ -1,0 +1,61 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import jaJson from '../../i18n/ja.json';
+import enJson from '../../i18n/en.json';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: undefined }, props: { t: jaJson, lang: 'ja' as const } },
+    { params: { lang: 'en' }, props: { t: enJson, lang: 'en' as const } },
+  ];
+}
+
+const { t, lang } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const isJa = lang === 'ja';
+const title = isJa ? 'ライセンス - EnJaSwitcher' : 'License - EnJaSwitcher';
+const description = isJa ? 'EnJaSwitcher の MIT License 全文' : 'EnJaSwitcher MIT License';
+const alternateUrl = isJa ? `${base}en/license/` : `${base}license/`;
+---
+
+<Layout {title} {description} {lang} {alternateUrl}>
+  <main>
+    <section class="license-page">
+      <div class="container">
+        <h1>{t.license.heading}</h1>
+        <pre class="license-text">{t.license.text}</pre>
+      </div>
+    </section>
+  </main>
+
+  <style>
+    .container {
+      max-width: 48rem;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .license-page {
+      padding: 3rem 0;
+    }
+
+    .license-page h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+
+    .license-text {
+      background: #f5f5f7;
+      border-radius: 8px;
+      padding: 1.5rem;
+      font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-x: auto;
+      color: #1d1d1f;
+    }
+  </style>
+</Layout>

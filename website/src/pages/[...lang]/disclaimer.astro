@@ -1,0 +1,73 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import jaJson from '../../i18n/ja.json';
+import enJson from '../../i18n/en.json';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: undefined }, props: { t: jaJson, lang: 'ja' as const } },
+    { params: { lang: 'en' }, props: { t: enJson, lang: 'en' as const } },
+  ];
+}
+
+const { t, lang } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const isJa = lang === 'ja';
+const title = isJa ? '免責事項 - EnJaSwitcher' : 'Disclaimer - EnJaSwitcher';
+const description = isJa
+  ? 'EnJaSwitcher の免責事項。動作保証、Apple公証、セキュリティポリシー、キー入力の取り扱いについて。'
+  : 'EnJaSwitcher disclaimer. Warranty, Apple notarization, security policy, and key input handling.';
+const alternateUrl = isJa ? `${base}en/disclaimer/` : `${base}disclaimer/`;
+---
+
+<Layout {title} {description} {lang} {alternateUrl}>
+  <main>
+    <section class="disclaimer-page">
+      <div class="container">
+        <h1>{t.disclaimer.heading}</h1>
+        <div class="disclaimer-body">
+          {t.disclaimer.items.map((item: { title: string; text: string }) => (
+            <div class="disclaimer-section">
+              <h2>{item.title}</h2>
+              <p>{item.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <style>
+    .container {
+      max-width: 48rem;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .disclaimer-page {
+      padding: 3rem 0;
+    }
+
+    .disclaimer-page h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+
+    .disclaimer-section {
+      margin-bottom: 2rem;
+    }
+
+    .disclaimer-section h2 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .disclaimer-section p {
+      color: #6e6e73;
+      line-height: 1.8;
+      font-size: 0.95rem;
+    }
+  </style>
+</Layout>

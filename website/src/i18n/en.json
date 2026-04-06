@@ -38,7 +38,7 @@
       },
       {
         "title": "Step 2: Bypass Gatekeeper",
-        "description": "This app is not notarized by Apple, so macOS will show a warning when you first try to open it. Use one of the following methods to bypass it.",
+        "description": "This app is not notarized by Apple, so macOS Gatekeeper will block it on all Macs (not just corporate devices). Use one of the following methods to bypass it. If these don't work (e.g., on managed corporate Macs), building from source is the most reliable option — see the GitHub README.",
         "options": [
           {
             "label": "Option A: Remove quarantine attribute via Terminal",
@@ -101,8 +101,8 @@
         "answer": "Check that EnJaSwitcher is enabled in both \"Accessibility\" and \"Input Monitoring\" under \"System Settings > Privacy & Security\". If it's already enabled but not working, remove it with the minus button and re-add it with the plus button."
       },
       {
-        "question": "\"Unidentified developer\" warning appears",
-        "answer": "This appears because the app is not notarized by Apple. Run xattr -cr /Applications/EnJaSwitcher.app in Terminal, or right-click the app and select \"Open\"."
+        "question": "\"Unidentified developer\" or malware warning appears",
+        "answer": "This appears because the app is not notarized by Apple. This affects all Macs, not just corporate devices. Run xattr -cr /Applications/EnJaSwitcher.app in Terminal, or right-click the app and select \"Open\". On managed corporate Macs where these methods are blocked, building from source is the only option (see GitHub README)."
       },
       {
         "question": "How to launch at login",
@@ -138,7 +138,7 @@
       },
       {
         "title": "Apple Notarization",
-        "text": "This app is not notarized by Apple, so an additional step is required on first launch. Please follow the installation instructions to proceed."
+        "text": "This app is not notarized by Apple (notarization requires Apple Developer Program enrollment), so macOS Gatekeeper will block it when downloaded from the internet. This affects all Macs. Please follow the installation instructions to bypass Gatekeeper, or build from source for the most reliable experience."
       },
       {
         "title": "Future Compatibility",

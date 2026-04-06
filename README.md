@@ -14,6 +14,7 @@ A macOS menu bar resident app (input source switcher) that lets you choose betwe
 - [How to Stop](#how-to-stop)
 - [Uninstallation](#uninstallation)
 - [Troubleshooting](#troubleshooting)
+- [Gatekeeper & Security Notes](#gatekeeper--security-notes)
 - [Disclaimer](#disclaimer)
 
 ## Switching Methods
@@ -127,7 +128,8 @@ To avoid having to reconfigure macOS permissions (Accessibility and Input Monito
 
 ```bash
 swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
-mkdir -p EnJaSwitcher.app/Contents/Resources
+mkdir -p EnJaSwitcher.app/Contents/{MacOS,Resources}
+cp Info.plist EnJaSwitcher.app/Contents/
 cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
 cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
 codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
@@ -168,7 +170,8 @@ pkill -f enja-switcher
 
 ```bash
 swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
-mkdir -p EnJaSwitcher.app/Contents/Resources
+mkdir -p EnJaSwitcher.app/Contents/{MacOS,Resources}
+cp Info.plist EnJaSwitcher.app/Contents/
 cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
 cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
 codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
@@ -279,10 +282,25 @@ Even after removing the app, old permission entries remain in macOS settings.
 | **Does not start after login** | Check the process status with `launchctl list \| grep enja`. Verify that the plist file exists in the correct location. |
 | **Switching stops working after a rebuild** | Check the signing information with `codesign -dvv /Applications/EnJaSwitcher.app`. If not signed with the self-signed certificate (`EnJaSwitcher Dev`), remove and re-add in both "Accessibility" and "Input Monitoring" using the minus and plus buttons. |
 
+## Gatekeeper & Security Notes
+
+This app has **not been notarized by Apple** (Apple Developer Program enrollment is required for notarization). As a result, macOS Gatekeeper will block the app when downloaded from the internet. This affects **all Macs**, not just managed corporate devices.
+
+**Recommended: Build from source** — Building the app locally on your own Mac is the most reliable method. Locally built apps do not have the quarantine attribute and are not subject to Gatekeeper checks. Follow the [Installation](#installation) steps above.
+
+**If using a pre-built download**, you must bypass Gatekeeper using one of these methods:
+
+| Method | Command / Steps |
+|--------|-----------------|
+| **Option A: Remove quarantine attribute** | `xattr -cr ~/Downloads/EnJaSwitcher.app` |
+| **Option B: Right-click to open** | Right-click (or Control+click) the app and select "Open", then click "Open" in the confirmation dialog |
+
+> **Note for managed corporate Macs**: If your Mac is managed by MDM (Mobile Device Management), the above bypass methods may be disabled by your organization's security policy. In that case, building from source is the only option.
+
 ## Disclaimer
 
 - This app is open-source software developed by an individual, provided as-is with no warranty.
-- This app has not been notarized by Apple. An additional step is required on first launch (see Installation).
+- This app has not been notarized by Apple. See [Gatekeeper & Security Notes](#gatekeeper--security-notes) for details.
 - If macOS security policies change significantly in the future, the APIs used by this app (`CGEventTap`, `IOHIDManager`) could be affected.
 - Permissions are managed by macOS, and this app does not record or transmit keystroke content.
 
@@ -309,6 +327,7 @@ Created by Toshiaki Kujime.
 - [停止方法](#停止方法)
 - [アンインストール](#アンインストール)
 - [トラブルシューティング](#トラブルシューティング)
+- [Gatekeeper・セキュリティについて](#gatekeeperセキュリティについて)
 - [免責事項](#免責事項)
 
 ## 切り替え方式
@@ -422,7 +441,8 @@ cd enja-switcher
 
 ```bash
 swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
-mkdir -p EnJaSwitcher.app/Contents/Resources
+mkdir -p EnJaSwitcher.app/Contents/{MacOS,Resources}
+cp Info.plist EnJaSwitcher.app/Contents/
 cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
 cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
 codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
@@ -463,7 +483,8 @@ pkill -f enja-switcher
 
 ```bash
 swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
-mkdir -p EnJaSwitcher.app/Contents/Resources
+mkdir -p EnJaSwitcher.app/Contents/{MacOS,Resources}
+cp Info.plist EnJaSwitcher.app/Contents/
 cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
 cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
 codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
@@ -574,10 +595,25 @@ rm -rf /Applications/EnJaSwitcher.app
 | **ログイン後に起動しない** | `launchctl list \| grep enja` でプロセス状態を確認。plistファイルが正しい場所に存在するか確認。 |
 | **ビルド後に切り替えが動かなくなった** | `codesign -dvv /Applications/EnJaSwitcher.app` で署名情報を確認。自己署名証明書（`EnJaSwitcher Dev`）で署名されていない場合は、「アクセシビリティ」と「入力監視」からマイナスで削除して再追加。 |
 
+## Gatekeeper・セキュリティについて
+
+本アプリは**Apple公証（Notarization）を受けていません**（公証にはApple Developer Programへの加入が必要です）。そのため、インターネットからダウンロードした場合、macOS Gatekeeperがアプリをブロックします。これは**会社Macに限らず、すべてのMacで発生します**。
+
+**推奨: ソースからビルド** — 自分のMacでローカルビルドするのが最も確実な方法です。ローカルビルドしたアプリにはquarantine属性が付かないため、Gatekeeperの検査対象になりません。上記の[インストール手順](#インストール手順)に従ってください。
+
+**ダウンロード版を使用する場合**は、以下のいずれかの方法でGatekeeperを回避してください:
+
+| 方法 | コマンド / 手順 |
+|------|----------------|
+| **方法A: quarantine属性を削除** | `xattr -cr ~/Downloads/EnJaSwitcher.app` |
+| **方法B: 右クリックで開く** | アプリを右クリック（またはControl+クリック）して「開く」を選択し、確認ダイアログで「開く」をクリック |
+
+> **会社Mac（MDM管理下）をお使いの方へ**: MDM（モバイルデバイス管理）で管理されたMacでは、組織のセキュリティポリシーにより上記の回避方法が無効化されている場合があります。その場合は、ソースからのビルドが唯一の選択肢になります。
+
 ## 免責事項
 
 - 本アプリは個人が開発したオープンソースソフトウェアであり、動作保証はありません。
-- Apple公証（Notarization）を受けていないため、初回起動時に追加の手順が必要です（インストール手順を参照）。
+- Apple公証（Notarization）を受けていません。詳しくは[Gatekeeper・セキュリティについて](#gatekeeperセキュリティについて)を参照してください。
 - macOSのセキュリティポリシーが大幅に変更された場合、本アプリが使用するAPI（`CGEventTap`、`IOHIDManager`）が影響を受ける可能性があります。
 - 権限はmacOSが管理しており、本アプリがキー入力の内容を記録・送信することはありません。
 

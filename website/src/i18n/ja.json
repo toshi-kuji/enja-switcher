@@ -38,7 +38,7 @@
       },
       {
         "title": "ステップ 2: Gatekeeper の回避",
-        "description": "本アプリは Apple 公証（Notarization）を受けていないため、ダウンロード後にそのまま開くと macOS が警告を表示します。以下のいずれかの方法で回避してください。",
+        "description": "本アプリは Apple 公証（Notarization）を受けていないため、ダウンロードしたアプリを開こうとすると macOS Gatekeeper がブロックします（会社 Mac に限らず、すべての Mac で発生します）。以下のいずれかの方法で回避してください。回避できない場合（会社の MDM 管理 Mac 等）は、ソースからのビルドが最も確実です（GitHub README を参照）。",
         "options": [
           {
             "label": "方法 A: ターミナルで quarantine 属性を削除",
@@ -101,8 +101,8 @@
         "answer": "「システム設定 > プライバシーとセキュリティ」で「アクセシビリティ」と「入力監視」の両方で EnJaSwitcher が許可されているか確認してください。許可済みなのに動かない場合は、一度マイナスボタンで削除してからプラスボタンで再追加してください。"
       },
       {
-        "question": "「開発元が未確認」と表示されて開けない",
-        "answer": "Apple 公証を受けていないアプリのため表示されます。ターミナルで xattr -cr /Applications/EnJaSwitcher.app を実行するか、右クリック >「開く」で起動してください。"
+        "question": "「開発元が未確認」やマルウェア警告が表示されて開けない",
+        "answer": "Apple 公証を受けていないアプリのため表示されます（すべての Mac で発生します）。ターミナルで xattr -cr /Applications/EnJaSwitcher.app を実行するか、右クリック >「開く」で起動してください。会社の MDM 管理 Mac でこれらの方法が使えない場合は、ソースからビルドしてください（GitHub README 参照）。"
       },
       {
         "question": "ログイン時に自動起動したい",
@@ -138,7 +138,7 @@
       },
       {
         "title": "Apple 公証について",
-        "text": "本アプリは Apple 公証（Notarization）を受けていないため、初回起動時に追加の手順が必要です。インストール手順に従って回避してください。"
+        "text": "本アプリは Apple 公証（Notarization）を受けていません（公証には Apple Developer Program への加入が必要です）。そのため、インターネットからダウンロードした場合、macOS Gatekeeper がアプリをブロックします（すべての Mac で発生します）。インストール手順に従って回避するか、ソースからビルドしてください。"
       },
       {
         "title": "将来の互換性について",

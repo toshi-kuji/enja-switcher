@@ -29,6 +29,10 @@ open /Applications/EnJaSwitcher.app
 - 常に `codesign --force --sign "EnJaSwitcher Dev"` を使う。ad-hoc にすると署名 identity が変わり、macOS が別アプリとみなして入力監視・アクセシビリティの権限がリセットされる
 - 同じ証明書で署名し続ける限り、再ビルドしても権限は維持される
 
+## 作業上の注意
+
+- commit & push はユーザーが明示的に指示するまで実行しない
+
 ## 重要な制約
 
 - codesign を忘れると入力監視の権限がリセットされる

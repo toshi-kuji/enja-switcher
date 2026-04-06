@@ -1,7 +1,7 @@
 {
   "hero": {
     "appName": "EnJaSwitcher",
-    "headline": "macOS 入力言語、切り替えアプリ（英語 ↔ 日本語）",
+    "headline": "macOS 入力ソース切り替えアプリ（英数 ↔ かな）",
     "download": "ダウンロード",
     "langSwitch": "English",
     "langSwitchHref": "/en/"
@@ -12,7 +12,7 @@
       {
         "emoji": "🎯",
         "title": "迷わない",
-        "description": "左⌘ = 英語 / 右⌘ = 日本語。\nCapsLock 1回 = 英語 / 2回 = 日本語。",
+        "description": "左⌘ = 英数 / 右⌘ = かな。\nCapsLock 1回 = 英数 / 2回 = かな。",
         "screenshot": "01.png"
       },
       {

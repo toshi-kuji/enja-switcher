@@ -52,6 +52,28 @@ const disclaimerPath = isJa ? `${base}disclaimer/` : `${base}en/disclaimer/`;
 
     <meta name="generator" content={Astro.generator} />
 
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "EnJaSwitcher",
+      "description": description,
+      "operatingSystem": "macOS 13+",
+      "applicationCategory": "UtilitiesApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "downloadUrl": "https://github.com/toshi-kuji/enja-switcher/releases/latest",
+      "author": {
+        "@type": "Person",
+        "name": "Toshiaki Kujime"
+      },
+      "license": "https://opensource.org/licenses/MIT",
+      "inLanguage": lang === "ja" ? "ja" : "en"
+    })} />
+
     <style>
       /* ===== Reset & Base ===== */
       *,
@@ -104,7 +126,7 @@ const disclaimerPath = isJa ? `${base}disclaimer/` : `${base}en/disclaimer/`;
       }
 
       .header-nav a {
-        color: #5a8a9e;
+        color: #3d7a90;
       }
 
       .header-nav a:hover {
@@ -129,7 +151,7 @@ const disclaimerPath = isJa ? `${base}disclaimer/` : `${base}en/disclaimer/`;
         margin-top: 4rem;
         text-align: center;
         font-size: 0.8rem;
-        color: #5a8a9e;
+        color: #3d7a90;
       }
 
       /* ===== Responsive ===== */

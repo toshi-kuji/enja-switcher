@@ -1,7 +1,7 @@
 {
   "hero": {
     "appName": "EnJaSwitcher",
-    "headline": "macOS Input Language Switcher (English ↔ Japanese)",
+    "headline": "macOS Input Source Switcher (Eisuu ↔ Kana)",
     "download": "Download",
     "langSwitch": "日本語",
     "langSwitchHref": "/"
@@ -12,7 +12,7 @@
       {
         "emoji": "🎯",
         "title": "No guessing",
-        "description": "Left ⌘ = English / Right ⌘ = Japanese.\nCapsLock once = English / twice = Japanese.",
+        "description": "Left ⌘ = Eisuu (English) / Right ⌘ = Kana (Japanese).\nCapsLock once = Eisuu / twice = Kana.",
         "screenshot": "01.png"
       },
       {

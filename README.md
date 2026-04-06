@@ -59,6 +59,7 @@ Reliably switches languages with a single key, regardless of the current state.
 | Combination key ignored | Switching does not trigger during combination operations such as Command+C |
 | Input source switching | Virtual keycode dispatch (Left Cmd: `102` Eisuu, Right Cmd: `104` Kana) |
 | Required permissions | **Accessibility** and **Input Monitoring** |
+| Update check | Periodically checks GitHub Releases API for new versions. No personal data is sent. Can be disabled from the menu bar. |
 | Auto-start management | Allow in the background (System Settings > General > Login Items) |
 
 ## App Structure
@@ -393,6 +394,7 @@ Created by Toshiaki Kujime.
 | 他キー併用無視 | Command+C などコンビネーション操作では切り替えが発動しない |
 | 入力ソース切替 | 仮想キーコード送信（左Cmd: `102` 英数, 右Cmd: `104` かな） |
 | 必要権限 | **アクセシビリティ** および **入力監視** |
+| アップデート確認 | GitHub Releases API を定期的に確認し、新バージョンを通知します。個人情報の送信はありません。メニューバーから無効にできます。 |
 | 自動起動の管理 | バックグラウンドでの実行を許可（システム設定 > 一般 > ログイン項目） |
 
 ## アプリの構造

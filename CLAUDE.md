@@ -15,7 +15,7 @@ open /Applications/EnJaSwitcher.app
 
 ## リリース手順
 
-1. `Info.plist` の `CFBundleShortVersionString` と `CFBundleVersion` を新バージョンに更新
+1. `Info.plist` の `CFBundleShortVersionString` と `CFBundleVersion` を新バージョンに更新（必ず `X.Y.Z` の3桁形式。GitHub Release タグも `vX.Y.Z` で統一。桁数が異なると `.compare(_, options: .numeric)` で誤判定が起きる）
 2. ビルド（上記手順）→ 動作確認
 3. `EnJaSwitcher.app` を zip に固める
 4. GitHub で新しい Release を作成（tag 例: `v1.1.0`）、zip をアップロード

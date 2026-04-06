@@ -1,9 +1,8 @@
 #!/bin/bash
 # generate-icon.sh - Generate AppIcon.icns from AppIcon.svg
 #
-# Requires macOS with one of:
-#   - rsvg-convert (brew install librsvg)  [recommended]
-#   - qlmanage (built-in, but lower quality for SVG)
+# Uses a built-in Swift SVG renderer (scripts/svg2png.swift) that preserves
+# transparency. Falls back to rsvg-convert if available.
 #
 # Usage: ./scripts/generate-icon.sh
 
@@ -14,6 +13,8 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 SVG_FILE="$PROJECT_DIR/AppIcon.svg"
 ICONSET_DIR="$PROJECT_DIR/AppIcon.iconset"
 ICNS_FILE="$PROJECT_DIR/AppIcon.icns"
+SVG2PNG_SWIFT="$SCRIPT_DIR/svg2png.swift"
+SVG2PNG_BIN="/tmp/svg2png_enja"
 
 if [ ! -f "$SVG_FILE" ]; then
   echo "Error: $SVG_FILE not found"
@@ -23,11 +24,16 @@ fi
 # Determine SVG-to-PNG converter
 if command -v rsvg-convert &>/dev/null; then
   CONVERTER="rsvg-convert"
-elif command -v qlmanage &>/dev/null; then
-  CONVERTER="qlmanage"
+elif [ -f "$SVG2PNG_SWIFT" ]; then
+  # Build the Swift converter if needed
+  if [ ! -f "$SVG2PNG_BIN" ] || [ "$SVG2PNG_SWIFT" -nt "$SVG2PNG_BIN" ]; then
+    echo "Building svg2png tool..."
+    swiftc -O -o "$SVG2PNG_BIN" "$SVG2PNG_SWIFT" -framework Cocoa
+  fi
+  CONVERTER="svg2png"
 else
   echo "Error: No SVG converter found."
-  echo "Install librsvg: brew install librsvg"
+  echo "Install librsvg (brew install librsvg) or ensure scripts/svg2png.swift exists."
   exit 1
 fi
 
@@ -38,7 +44,6 @@ rm -rf "$ICONSET_DIR"
 mkdir -p "$ICONSET_DIR"
 
 # Required icon sizes for macOS .iconset
-# Format: filename size
 SIZES=(
   "icon_16x16 16"
   "icon_16x16@2x 32"
@@ -61,20 +66,7 @@ for entry in "${SIZES[@]}"; do
   if [ "$CONVERTER" = "rsvg-convert" ]; then
     rsvg-convert -w "$size" -h "$size" "$SVG_FILE" -o "$output"
   else
-    # qlmanage: render at largest size then resize with sips
-    TMPFILE="$(mktemp /tmp/icon_XXXXXX.png)"
-    qlmanage -t -s 1024 -o /tmp "$SVG_FILE" &>/dev/null
-    QLOUT="/tmp/$(basename "$SVG_FILE").png"
-    if [ -f "$QLOUT" ]; then
-      cp "$QLOUT" "$TMPFILE"
-      rm "$QLOUT"
-    else
-      echo "Error: qlmanage failed to render SVG"
-      rm -f "$TMPFILE"
-      exit 1
-    fi
-    sips -z "$size" "$size" "$TMPFILE" --out "$output" &>/dev/null
-    rm -f "$TMPFILE"
+    "$SVG2PNG_BIN" "$SVG_FILE" "$output" "$size" 2>/dev/null
   fi
 
   echo "  Generated: ${name}.png (${size}x${size})"

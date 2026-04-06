@@ -20,6 +20,23 @@ export function getStaticPaths() {
 
 const { t, lang } = Astro.props;
 const base = import.meta.env.BASE_URL;
+
+// Fetch latest release version from GitHub API at build time
+let latestVersion = "1.0.0";
+let downloadUrl = "https://github.com/toshi-kuji/enja-switcher/releases/download/v1.0.0/EnJaSwitcher.app.zip";
+try {
+  const res = await fetch("https://api.github.com/repos/toshi-kuji/enja-switcher/releases/latest", {
+    headers: { "Accept": "application/vnd.github.v3+json" },
+  });
+  if (res.ok) {
+    const data = await res.json();
+    const tag = data.tag_name || "v1.0.0";
+    latestVersion = tag.replace(/^v/, "");
+    downloadUrl = `https://github.com/toshi-kuji/enja-switcher/releases/download/${tag}/EnJaSwitcher.app.zip`;
+  }
+} catch {
+  // Fallback to hardcoded values on error
+}
 const isJa = lang === 'ja';
 const title = isJa
   ? 'EnJaSwitcher - macOS 入力言語 切り替えアプリ'
@@ -45,7 +62,7 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
           </div>
         </div>
         <div class="hero-action">
-          <a href="https://github.com/toshi-kuji/enja-switcher/releases/download/v1.0.0/EnJaSwitcher.app.zip" class="btn-download">{t.hero.download}</a>
+          <a href={downloadUrl} class="btn-download">{isJa ? `ダウンロード v${latestVersion}` : `Download v${latestVersion}`}</a>
           <p class="hero-meta">macOS 13+ | Free &amp; Open Source | <a href="https://github.com/toshi-kuji/enja-switcher" target="_blank" rel="noopener noreferrer">{isJa ? 'GitHub はこちら' : 'View on GitHub'}</a></p>
         </div>
       </div>

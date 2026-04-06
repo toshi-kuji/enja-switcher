@@ -246,14 +246,60 @@ class EventInterceptor {
     }
 }
 
+// MARK: - Update Checker
+
+class UpdateChecker {
+    static let releasesAPIURL = "https://api.github.com/repos/toshi-kuji/enja-switcher/releases/latest"
+    static let releasesPageURL = "https://github.com/toshi-kuji/enja-switcher/releases/latest"
+
+    var onUpdateAvailable: ((String) -> Void)?
+
+    func check() {
+        guard let url = URL(string: UpdateChecker.releasesAPIURL) else { return }
+        var request = URLRequest(url: url)
+        request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 15
+
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            guard error == nil,
+                  let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200,
+                  let data = data,
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let tagName = json["tag_name"] as? String else {
+                return
+            }
+
+            // Strip leading "v" if present
+            let remoteVersion = tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
+
+            // Validate: only digits and dots
+            guard remoteVersion.allSatisfy({ $0.isNumber || $0 == "." }) else { return }
+
+            // Compare with current version
+            guard let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else { return }
+
+            if currentVersion.compare(remoteVersion, options: .numeric) == .orderedAscending {
+                DispatchQueue.main.async {
+                    self?.onUpdateAvailable?(remoteVersion)
+                }
+            }
+        }.resume()
+    }
+}
+
 // MARK: - App Delegate
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
     var commandMenuItem: NSMenuItem!
     var capsLockMenuItem: NSMenuItem!
+    var websiteMenuItem: NSMenuItem!
+    var autoCheckMenuItem: NSMenuItem!
+    var updateCheckTimer: Timer?
 
     let interceptor: EventInterceptor
+    let updateChecker = UpdateChecker()
 
     init(interceptor: EventInterceptor) {
         self.interceptor = interceptor
@@ -298,8 +344,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // --- セパレーター ---
         menu.addItem(NSMenuItem.separator())
 
+        // --- Check for Updates Automatically ---
+        autoCheckMenuItem = NSMenuItem(
+            title: "Check for Updates Automatically", action: #selector(toggleAutoCheck(_:)),
+            keyEquivalent: "")
+        autoCheckMenuItem.target = self
+        let checkEnabled = UserDefaults.standard.object(forKey: "checkForUpdates") == nil
+            || UserDefaults.standard.bool(forKey: "checkForUpdates")
+        autoCheckMenuItem.state = checkEnabled ? .on : .off
+        menu.addItem(autoCheckMenuItem)
+
         // --- About This App ---
-        let websiteMenuItem = NSMenuItem(
+        websiteMenuItem = NSMenuItem(
             title: "About This App...", action: #selector(openWebsite),
             keyEquivalent: "")
         websiteMenuItem.target = self
@@ -326,6 +382,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             commandMenuItem.state = .on
             capsLockMenuItem.state = .off
             interceptor.currentMode = .command
+        }
+
+        // アップデートチェックのセットアップ
+        updateChecker.onUpdateAvailable = { [weak self] version in
+            guard let self = self else { return }
+            self.websiteMenuItem.title = "About This App... [v\(version) available]"
+        }
+
+        if checkEnabled {
+            scheduleUpdateChecks()
+        }
+    }
+
+    private func scheduleUpdateChecks() {
+        // 5秒後に初回チェック
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+            self?.updateChecker.check()
+        }
+        // 24時間ごとに繰り返し
+        updateCheckTimer?.invalidate()
+        updateCheckTimer = Timer.scheduledTimer(withTimeInterval: 86400, repeats: true) { [weak self] _ in
+            self?.updateChecker.check()
         }
     }
 
@@ -395,6 +473,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if let button = statusItem.button {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        }
+    }
+
+    @objc func toggleAutoCheck(_ sender: NSMenuItem) {
+        let newState = sender.state == .off
+        sender.state = newState ? .on : .off
+        UserDefaults.standard.set(newState, forKey: "checkForUpdates")
+
+        if newState {
+            scheduleUpdateChecks()
+        } else {
+            updateCheckTimer?.invalidate()
+            updateCheckTimer = nil
         }
     }
 

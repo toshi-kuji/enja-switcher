@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - website/**
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:

@@ -38,17 +38,8 @@
       },
       {
         "title": "Step 2: Bypass Gatekeeper",
-        "description": "This app is not notarized by Apple, so macOS Gatekeeper will block it on all Macs (not just corporate devices). Use one of the following methods to bypass it. If these don't work (e.g., on managed corporate Macs), building from source is the most reliable option — see the GitHub README.",
-        "options": [
-          {
-            "label": "Option A: Remove quarantine attribute via Terminal",
-            "command": "xattr -cr ~/Downloads/EnJaSwitcher.app"
-          },
-          {
-            "label": "Option B: Right-click to open",
-            "detail": "Right-click (or Control+click) EnJaSwitcher.app and select \"Open\". When the confirmation dialog appears, click \"Open\"."
-          }
-        ]
+        "description": "This app is not notarized by Apple, so macOS Gatekeeper will show a warning on first launch. After double-clicking the app, go to System Settings > Privacy & Security and click \"Open Anyway\". For detailed steps, see the GitHub README.",
+        "readmeLink": "https://github.com/toshi-kuji/enja-switcher#gatekeeper--security-notes"
       },
       {
         "title": "Step 3: Move to Applications",
@@ -102,7 +93,7 @@
       },
       {
         "question": "\"Unidentified developer\" or malware warning appears",
-        "answer": "This appears because the app is not notarized by Apple. This affects all Macs, not just corporate devices. Run xattr -cr /Applications/EnJaSwitcher.app in Terminal, or right-click the app and select \"Open\". On managed corporate Macs where these methods are blocked, building from source is the only option (see GitHub README)."
+        "answer": "This appears because the app is not notarized by Apple (affects all Macs). After dismissing the warning, go to System Settings > Privacy & Security and click \"Open Anyway\". See the GitHub README for detailed steps."
       },
       {
         "question": "How to launch at login",

@@ -1,3 +1,10 @@
+# enja-switcher
+
+- [English](#enja-switcher-english)
+- [日本語](#enja-switcher日本語)
+
+---
+
 # enja-switcher (English)
 
 A macOS menu bar resident app (input source switcher) that lets you choose between two switching methods from the menu bar. Select your preferred method from the "E/J" icon in the menu bar.
@@ -286,14 +293,35 @@ Even after removing the app, old permission entries remain in macOS settings.
 
 This app has **not been notarized by Apple** (Apple Developer Program enrollment is required for notarization). As a result, macOS Gatekeeper will block the app when downloaded from the internet. This affects **all Macs**, not just managed corporate devices.
 
-**Recommended: Build from source** — Building the app locally on your own Mac is the most reliable method. Locally built apps do not have the quarantine attribute and are not subject to Gatekeeper checks. Follow the [Installation](#installation) steps above.
+### Method A: Open Anyway (Recommended for downloaded app)
 
-**If using a pre-built download**, you must bypass Gatekeeper using one of these methods:
+1. Move EnJaSwitcher.app to `/Applications` and double-click it
+2. A **"EnJaSwitcher" Not Opened** warning appears → click **Done**
+3. Open **System Settings > Privacy & Security** (scroll to the bottom)
+4. You'll see **"EnJaSwitcher" was blocked to protect your Mac.** → click **Open Anyway**
+5. A confirmation dialog **Open "EnJaSwitcher"?** appears → click **Open Anyway**
+6. When permission dialogs appear, grant them (see below)
 
-| Method | Command / Steps |
-|--------|-----------------|
-| **Option A: Remove quarantine attribute** | `xattr -cr ~/Downloads/EnJaSwitcher.app` |
-| **Option B: Right-click to open** | Right-click (or Control+click) the app and select "Open", then click "Open" in the confirmation dialog |
+### Method B: Terminal command
+
+```bash
+xattr -cr /Applications/EnJaSwitcher.app
+```
+
+Then double-click the app to launch.
+
+### Permissions
+
+On first launch, macOS will prompt you for permissions. Grant both:
+
+- **Accessibility** — required to send virtual Eisuu/Kana key events
+- **Input Monitoring** — required to detect Command key and CapsLock presses
+
+You can also enable them manually in **System Settings > Privacy & Security**.
+
+### Build from source
+
+Building locally is the most reliable method — locally built apps are not subject to Gatekeeper checks. Follow the [Installation](#installation) steps above.
 
 > **Note for managed corporate Macs**: If your Mac is managed by MDM (Mobile Device Management), the above bypass methods may be disabled by your organization's security policy. In that case, building from source is the only option.
 
@@ -599,14 +627,35 @@ rm -rf /Applications/EnJaSwitcher.app
 
 本アプリは**Apple公証（Notarization）を受けていません**（公証にはApple Developer Programへの加入が必要です）。そのため、インターネットからダウンロードした場合、macOS Gatekeeperがアプリをブロックします。これは**会社Macに限らず、すべてのMacで発生します**。
 
-**推奨: ソースからビルド** — 自分のMacでローカルビルドするのが最も確実な方法です。ローカルビルドしたアプリにはquarantine属性が付かないため、Gatekeeperの検査対象になりません。上記の[インストール手順](#インストール手順)に従ってください。
+### 方法A: 「このまま開く」で許可（ダウンロード版の推奨手順）
 
-**ダウンロード版を使用する場合**は、以下のいずれかの方法でGatekeeperを回避してください:
+1. EnJaSwitcher.app を `/Applications` に移動してダブルクリック
+2. **「"EnJaSwitcher"は開けません」** 警告が表示される → **「完了」** を押す
+3. **「システム設定 > プライバシーとセキュリティ」** を開く（一番下までスクロール）
+4. **「"EnJaSwitcher"は開発元を確認できないため、使用がブロックされました。」** → **「このまま開く」** を押す
+5. 確認ダイアログ **「"EnJaSwitcher"を開きますか？」** → **「このまま開く」** を押す
+6. 権限のダイアログが表示されたら許可する（下記参照）
 
-| 方法 | コマンド / 手順 |
-|------|----------------|
-| **方法A: quarantine属性を削除** | `xattr -cr ~/Downloads/EnJaSwitcher.app` |
-| **方法B: 右クリックで開く** | アプリを右クリック（またはControl+クリック）して「開く」を選択し、確認ダイアログで「開く」をクリック |
+### 方法B: ターミナルコマンド
+
+```bash
+xattr -cr /Applications/EnJaSwitcher.app
+```
+
+実行後、アプリをダブルクリックして起動してください。
+
+### 権限について
+
+初回起動時に macOS が権限を要求するダイアログを表示します。以下の2つを許可してください:
+
+- **アクセシビリティ** — 仮想的な英数/かなキー送信に必要
+- **入力監視** — Command キーや CapsLock の検出に必要
+
+**「システム設定 > プライバシーとセキュリティ」** で手動で有効にすることもできます。
+
+### ソースからビルド
+
+自分のMacでローカルビルドするのが最も確実な方法です。ローカルビルドしたアプリはGatekeeperの検査対象になりません。上記の[インストール手順](#インストール手順)に従ってください。
 
 > **会社Mac（MDM管理下）をお使いの方へ**: MDM（モバイルデバイス管理）で管理されたMacでは、組織のセキュリティポリシーにより上記の回避方法が無効化されている場合があります。その場合は、ソースからのビルドが唯一の選択肢になります。
 

@@ -78,10 +78,11 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
       <div class="container">
         <h2 class="section-title">{t.install.heading}</h2>
         <ol class="steps">
-          {t.install.steps.map((step: { title: string; description: string }) => (
+          {t.install.steps.map((step: { title: string; description: string; readmeLink?: string }) => (
             <li class="step">
               <h3>{step.title}</h3>
               <p>{step.description}</p>
+              {step.readmeLink && <p><a href={step.readmeLink}>→ README</a></p>}
             </li>
           ))}
         </ol>

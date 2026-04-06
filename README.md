@@ -292,7 +292,7 @@ Even after removing the app, old permission entries remain in macOS settings.
 
 ## Gatekeeper & Security Notes
 
-This app has **not been notarized by Apple** (Apple Developer Program enrollment is required for notarization). As a result, macOS Gatekeeper will block the app when downloaded from the internet. This affects **all Macs**, not just managed corporate devices.
+This app has **not been notarized by Apple** (Apple Developer Program enrollment is required for notarization). As a result, macOS Gatekeeper will block the app when downloaded from the internet. This affects **all Macs**, not just managed corporate devices. **This applies to updates as well** — each time you download a new version, the same bypass steps are required.
 
 ### Method A: Open Anyway (Recommended for downloaded app)
 
@@ -627,7 +627,7 @@ rm -rf /Applications/EnJaSwitcher.app
 
 ## Gatekeeper・セキュリティについて
 
-本アプリは**Apple公証（Notarization）を受けていません**（公証にはApple Developer Programへの加入が必要です）。そのため、インターネットからダウンロードした場合、macOS Gatekeeperがアプリをブロックします。これは**会社Macに限らず、すべてのMacで発生します**。
+本アプリは**Apple公証（Notarization）を受けていません**（公証にはApple Developer Programへの加入が必要です）。そのため、インターネットからダウンロードした場合、macOS Gatekeeperがアプリをブロックします。これは**会社Macに限らず、すべてのMacで発生します**。**アップデート時も同様**で、新しいバージョンをダウンロードするたびに同じ手順が必要です。
 
 ### 方法A: 「このまま開く」で許可（ダウンロード版の推奨手順）
 

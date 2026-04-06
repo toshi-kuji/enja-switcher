@@ -38,17 +38,8 @@
       },
       {
         "title": "ステップ 2: Gatekeeper の回避",
-        "description": "本アプリは Apple 公証（Notarization）を受けていないため、ダウンロードしたアプリを開こうとすると macOS Gatekeeper がブロックします（会社 Mac に限らず、すべての Mac で発生します）。以下のいずれかの方法で回避してください。回避できない場合（会社の MDM 管理 Mac 等）は、ソースからのビルドが最も確実です（GitHub README を参照）。",
-        "options": [
-          {
-            "label": "方法 A: ターミナルで quarantine 属性を削除",
-            "command": "xattr -cr ~/Downloads/EnJaSwitcher.app"
-          },
-          {
-            "label": "方法 B: 右クリックから開く",
-            "detail": "EnJaSwitcher.app を右クリック（または Control+クリック）し、「開く」を選択します。確認ダイアログが表示されたら「開く」をクリックします。"
-          }
-        ]
+        "description": "本アプリは Apple 公証を受けていないため、初回起動時に macOS Gatekeeper が警告を表示します。アプリをダブルクリックした後、「システム設定 > プライバシーとセキュリティ」で「このまま開く」を選んでください。詳しい手順は GitHub README をご覧ください。",
+        "readmeLink": "https://github.com/toshi-kuji/enja-switcher#gatekeeperセキュリティについて"
       },
       {
         "title": "ステップ 3: アプリケーションフォルダに移動",
@@ -102,7 +93,7 @@
       },
       {
         "question": "「開発元が未確認」やマルウェア警告が表示されて開けない",
-        "answer": "Apple 公証を受けていないアプリのため表示されます（すべての Mac で発生します）。ターミナルで xattr -cr /Applications/EnJaSwitcher.app を実行するか、右クリック >「開く」で起動してください。会社の MDM 管理 Mac でこれらの方法が使えない場合は、ソースからビルドしてください（GitHub README 参照）。"
+        "answer": "Apple 公証を受けていないアプリのため表示されます（すべての Mac で発生します）。警告を閉じた後、「システム設定 > プライバシーとセキュリティ」で「このまま開く」を選んでください。詳しい手順は GitHub README をご覧ください。"
       },
       {
         "question": "ログイン時に自動起動したい",

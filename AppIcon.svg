@@ -75,11 +75,11 @@
     <!-- Subtle divider line between E and J -->
     <line x1="256" y1="140" x2="256" y2="380" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1.5"/>
 
-    <!-- "E" - left half, upper position -->
-    <text x="152" y="315" text-anchor="middle" font-family="'SF Pro Rounded', 'Nunito', 'Varela Round', system-ui, sans-serif" font-size="220" font-weight="900" fill="#ffffff" fill-opacity="0.92" filter="url(#letterGlow)">E</text>
+    <!-- "E" - Varela Round (OFL), outlined, bold stroke -->
+    <path transform="translate(58, 351)" d="M46.86,-0.00 Q40.59,-0.00 36.30,-4.29 Q32.01,-8.58 32.01,-14.85 L32.01,-215.16 Q32.01,-221.43 36.30,-225.89 Q40.59,-230.34 46.86,-230.34 L179.19,-230.34 Q185.13,-230.34 189.25,-226.22 Q193.38,-222.09 193.38,-216.15 Q193.38,-210.21 189.25,-206.25 Q185.13,-202.29 179.19,-202.29 L62.04,-202.29 L62.04,-129.36 L167.31,-129.36 Q173.25,-129.36 177.38,-125.23 Q181.50,-121.11 181.50,-115.17 Q181.50,-109.23 177.38,-105.27 Q173.25,-101.31 167.31,-101.31 L62.04,-101.31 L62.04,-28.05 L179.19,-28.05 Q185.13,-28.05 189.25,-23.93 Q193.38,-19.80 193.38,-13.86 Q193.38,-7.92 189.25,-3.96 Q185.13,-0.00 179.19,-0.00 Z" fill="#ffffff" fill-opacity="0.92" stroke="#ffffff" stroke-opacity="0.92" stroke-width="18" stroke-linejoin="round" paint-order="stroke" filter="url(#letterGlow)"/>
 
-    <!-- "J" - right half, lower position -->
-    <text x="362" y="375" text-anchor="middle" font-family="'SF Pro Rounded', 'Nunito', 'Varela Round', system-ui, sans-serif" font-size="220" font-weight="900" fill="#ffffff" fill-opacity="0.85" filter="url(#letterGlow)">J</text>
+    <!-- "J" - Varela Round (OFL), outlined, bold stroke -->
+    <path transform="translate(272, 391)" d="M55.44,3.30 Q42.90,3.30 31.85,0.33 Q20.79,-2.64 11.55,-7.92 Q8.58,-9.57 6.44,-12.54 Q4.29,-15.51 4.29,-20.13 Q4.29,-25.41 7.76,-29.54 Q11.22,-33.66 16.83,-33.66 Q20.13,-33.66 22.77,-32.34 Q29.37,-29.04 37.12,-27.06 Q44.88,-25.08 53.46,-25.08 Q63.36,-25.08 72.44,-28.71 Q81.51,-32.34 87.45,-42.73 Q93.39,-53.13 93.39,-73.92 L93.39,-216.81 Q93.39,-223.08 97.68,-227.53 Q101.97,-231.99 108.24,-231.99 Q114.51,-231.99 118.97,-227.53 Q123.42,-223.08 123.42,-216.81 L123.42,-75.90 Q123.42,-52.14 117.65,-36.80 Q111.87,-21.45 102.14,-12.71 Q92.40,-3.96 80.19,-0.33 Q67.98,3.30 55.44,3.30 Z" fill="#ffffff" fill-opacity="0.85" stroke="#ffffff" stroke-opacity="0.85" stroke-width="18" stroke-linejoin="round" paint-order="stroke" filter="url(#letterGlow)"/>
 
     <!-- Bottom reflection -->
     <rect x="36" y="340" width="440" height="136" fill="#ffffff" opacity="0.04"/>

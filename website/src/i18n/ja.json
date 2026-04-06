@@ -37,20 +37,16 @@
         "description": "上のダウンロードボタン、または GitHub Releases ページから最新の EnJaSwitcher.app.zip をダウンロードします。"
       },
       {
-        "title": "ステップ 2: Gatekeeper の回避",
-        "description": "本アプリは Apple 公証を受けていないため、初回起動時に macOS Gatekeeper が警告を表示します。アプリをダブルクリックした後、「システム設定 > プライバシーとセキュリティ」で「このまま開く」を選んでください。詳しい手順は GitHub README をご覧ください。",
-        "readmeLink": "https://github.com/toshi-kuji/enja-switcher#gatekeeperセキュリティについて"
-      },
-      {
-        "title": "ステップ 3: アプリケーションフォルダに移動",
+        "title": "ステップ 2: アプリケーションフォルダに移動",
         "description": "EnJaSwitcher.app を /Applications フォルダにドラッグ＆ドロップで移動します。"
       },
       {
-        "title": "ステップ 4: 起動",
-        "description": "Applications フォルダの EnJaSwitcher.app をダブルクリックして起動します。メニューバーに「E/J」アイコンが表示されれば正常に起動しています。"
+        "title": "ステップ 3: 起動 & Gatekeeper の回避",
+        "description": "EnJaSwitcher.app をダブルクリックします。本アプリは Apple 公証を受けていないため、macOS Gatekeeper が警告を表示します。「システム設定 > プライバシーとセキュリティ」で「このまま開く」を選んでください。アップデート時も同じ手順が必要です。詳しくは GitHub README をご覧ください。",
+        "readmeLink": "https://github.com/toshi-kuji/enja-switcher#gatekeeperセキュリティについて"
       },
       {
-        "title": "ステップ 5: 権限の付与",
+        "title": "ステップ 4: 権限の付与",
         "description": "初回起動時に macOS のダイアログが表示されます。「システム設定 > プライバシーとセキュリティ」を開き、以下の2箇所で EnJaSwitcher を許可（オン）してください。",
         "permissions": [
           "アクセシビリティ（仮想キー送信に必要）",

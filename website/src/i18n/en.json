@@ -37,20 +37,16 @@
         "description": "Click the download button above, or grab the latest EnJaSwitcher.app.zip from the GitHub Releases page."
       },
       {
-        "title": "Step 2: Bypass Gatekeeper",
-        "description": "This app is not notarized by Apple, so macOS Gatekeeper will show a warning on first launch. After double-clicking the app, go to System Settings > Privacy & Security and click \"Open Anyway\". For detailed steps, see the GitHub README.",
-        "readmeLink": "https://github.com/toshi-kuji/enja-switcher#gatekeeper--security-notes"
-      },
-      {
-        "title": "Step 3: Move to Applications",
+        "title": "Step 2: Move to Applications",
         "description": "Drag and drop EnJaSwitcher.app into your /Applications folder."
       },
       {
-        "title": "Step 4: Launch",
-        "description": "Double-click EnJaSwitcher.app in your Applications folder. You should see an \"E/J\" icon appear in the menu bar."
+        "title": "Step 3: Launch & Bypass Gatekeeper",
+        "description": "Double-click EnJaSwitcher.app. Since this app is not notarized by Apple, macOS Gatekeeper will show a warning. Go to System Settings > Privacy & Security and click \"Open Anyway\". This is also required when updating to a new version. For detailed steps, see the GitHub README.",
+        "readmeLink": "https://github.com/toshi-kuji/enja-switcher#gatekeeper--security-notes"
       },
       {
-        "title": "Step 5: Grant Permissions",
+        "title": "Step 4: Grant Permissions",
         "description": "On first launch, macOS will prompt you for permissions. Open \"System Settings > Privacy & Security\" and enable EnJaSwitcher in the following two sections.",
         "permissions": [
           "Accessibility (required for sending virtual key events)",

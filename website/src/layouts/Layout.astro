@@ -8,11 +8,12 @@ interface Props {
 
 const { title, description, lang, alternateUrl } = Astro.props;
 const base = import.meta.env.BASE_URL;
-const siteUrl = 'https://toshi-kuji.github.io/enja-switcher';
-const currentUrl = siteUrl + new URL(Astro.url.pathname, siteUrl).pathname;
+const siteOrigin = 'https://toshi-kuji.github.io';
+const siteUrl = siteOrigin + '/enja-switcher';
+const currentUrl = siteOrigin + Astro.url.pathname;
 const ogImage = siteUrl + '/og-image.png';
 const alternateLang = lang === 'ja' ? 'en' : 'ja';
-const alternateFull = siteUrl + alternateUrl;
+const alternateFull = siteOrigin + alternateUrl;
 
 const isJa = lang === 'ja';
 const navLabels = {

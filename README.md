@@ -12,6 +12,7 @@ A macOS menu bar resident app (input source switcher) that lets you choose betwe
 ## Table of Contents
 
 - [Switching Methods](#switching-methods)
+- [Scroll Direction Control](#scroll-direction-control)
 - [Features](#features)
 - [Specifications](#specifications)
 - [App Structure](#app-structure)
@@ -38,6 +39,19 @@ Reliably switches languages with a single key, regardless of the current state.
 
 > **Required setting when using the CapsLock method**
 > To prevent conflicts with macOS's built-in "Caps Lock" function (green light on), go to **System Settings > Keyboard > Keyboard Shortcuts > Modifier Keys** and set the "Caps Lock key" assignment to **"No Action"**. (Since this app uses its own hardware monitoring, the switching will work correctly even with the "No Action" setting.)
+
+## Scroll Direction Control
+
+Toggle **Reverse Mouse Scroll** from the menu bar to reverse the vertical scroll direction of **mouse wheel events only**. Trackpad scrolling follows macOS's own "Natural Scrolling" setting and is not touched.
+
+This lets you set "natural scrolling on trackpad, traditional on mouse" (or any other combination of the two), which macOS's built-in settings cannot express — its "Natural Scrolling" toggle applies to both devices at once.
+
+### Details
+
+- Mouse vs. trackpad is detected via the CGEvent `scrollPhase` / `momentumPhase` fields. Trackpad events carry phase information; mouse wheel events do not.
+- Trackpad events pass through untouched. For mouse events, all three Y-axis delta fields (pixel, line, fixed-point) are negated to stay consistent across apps.
+- The scroll event tap is only active while the option is on. Turning it off removes the tap entirely.
+- Horizontal scrolling is not affected. No additional permissions required.
 
 ## Features
 
@@ -347,6 +361,7 @@ Created by Toshiaki Kujime.
 ## 目次
 
 - [切り替え方式](#切り替え方式)
+- [スクロール方向制御](#スクロール方向制御)
 - [特徴](#特徴)
 - [仕様](#仕様)
 - [アプリの構造](#アプリの構造)
@@ -373,6 +388,19 @@ Created by Toshiaki Kujime.
 
 > **CapsLock方式を使用する場合の必須設定**
 > macOS標準の「大文字固定」機能（緑のランプ点灯）が競合して誤作動するのを防ぐため、**システム設定 > キーボード > キーボードショートカット > 修飾キー** にて、「Caps Lockキー」への割り当てを必ず **「アクションなし」** に設定してください。（本アプリは独自のハードウェア監視を使用しているため、「アクションなし」に設定しても正確に切り替えが作動します）
+
+## スクロール方向制御
+
+メニューバーの **Reverse Mouse Scroll** をONにすると、**マウスホイールのみ**の縦スクロール方向が反転します。トラックパッドのスクロールはmacOS標準の「ナチュラルスクロール」設定にそのまま従い、本アプリは介入しません。
+
+これにより、「トラックパッドはナチュラル、マウスは従来方向」のような組み合わせが実現できます（macOS標準の「ナチュラルスクロール」設定はマウスとトラックパッド両方に一律で効くため、この組み合わせは表現できません）。
+
+### 仕組み
+
+- マウス / トラックパッドの判別は CGEvent の `scrollPhase` / `momentumPhase` フィールドで行います。トラックパッドイベントにはフェーズ情報が付与され、マウスホイールイベントには付きません。
+- トラックパッドイベントは素通し。マウスイベントだけ Y軸の3種類のデルタ値（pixel、line、fixed-point）を全て符号反転します（アプリによって参照フィールドが異なるため）。
+- スクロールイベントtapはONのときだけ有効化されます。OFFにすると完全に解除されます。
+- 横スクロール（Axis2）は対象外。追加の権限は不要です。
 
 ## 特徴
 

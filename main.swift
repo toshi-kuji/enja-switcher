@@ -61,6 +61,13 @@ class EventInterceptor {
     private var runLoopSource: CFRunLoopSource?
     private var hidManager: IOHIDManager?
 
+    // スクロール方向反転用（マウスのみ。トラックパッドはmacOS標準のナチュラルスクロール設定に従う）
+    private var scrollTap: CFMachPort?
+    private var scrollRunLoopSource: CFRunLoopSource?
+    var reverseMouseScroll: Bool = false {
+        didSet { updateScrollTapState() }
+    }
+
     func start() {
         let eventMask: CGEventMask =
             (1 << CGEventType.flagsChanged.rawValue) | (1 << CGEventType.keyDown.rawValue)
@@ -184,6 +191,97 @@ class EventInterceptor {
         return Unmanaged.passRetained(event)
     }
 
+    // MARK: - Scroll Direction Tap
+
+    private func updateScrollTapState() {
+        if reverseMouseScroll && scrollTap == nil {
+            startScrollTap()
+        } else if !reverseMouseScroll && scrollTap != nil {
+            stopScrollTap()
+        }
+    }
+
+    private func startScrollTap() {
+        let eventMask: CGEventMask = 1 << CGEventType.scrollWheel.rawValue
+
+        let callback: CGEventTapCallBack = { proxy, type, event, refcon in
+            guard let refcon = refcon else { return Unmanaged.passUnretained(event) }
+            let interceptor = Unmanaged<EventInterceptor>.fromOpaque(refcon).takeUnretainedValue()
+            return interceptor.handleScrollEvent(proxy: proxy, type: type, event: event)
+        }
+
+        guard let t = CGEvent.tapCreate(
+            tap: .cghidEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: eventMask,
+            callback: callback,
+            userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+        ) else {
+            print("Failed to create scroll event tap (needs Accessibility permission)")
+            return
+        }
+
+        self.scrollTap = t
+        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, t, 0)
+        self.scrollRunLoopSource = source
+        CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes)
+        CGEvent.tapEnable(tap: t, enable: true)
+        print("Scroll event tap enabled.")
+    }
+
+    private func stopScrollTap() {
+        if let tap = scrollTap {
+            CGEvent.tapEnable(tap: tap, enable: false)
+        }
+        if let source = scrollRunLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes)
+        }
+        scrollTap = nil
+        scrollRunLoopSource = nil
+        print("Scroll event tap disabled.")
+    }
+
+    private func handleScrollEvent(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent)
+        -> Unmanaged<CGEvent>?
+    {
+        // tapが無効化されたら自動的に再有効化（フェイルセーフ）
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let tap = self.scrollTap {
+                CGEvent.tapEnable(tap: tap, enable: true)
+            }
+            return Unmanaged.passUnretained(event)
+        }
+
+        guard type == .scrollWheel else {
+            return Unmanaged.passUnretained(event)
+        }
+
+        // マウスのみ反転。トラックパッドはmacOS標準のナチュラルスクロール設定に委ねる
+        // scrollPhase または momentumPhase が非0ならトラックパッド → 素通し
+        // マウスホイールはフェーズ情報を持たない（両方0）→ 反転対象
+        let scrollPhase = event.getIntegerValueField(.scrollWheelEventScrollPhase)
+        let momentumPhase = event.getIntegerValueField(.scrollWheelEventMomentumPhase)
+        let isTrackpad = (scrollPhase != 0 || momentumPhase != 0)
+
+        if isTrackpad {
+            return Unmanaged.passUnretained(event)
+        }
+
+        // 3種類のY軸フィールドを全て反転（アプリによって参照するフィールドが異なる）
+        // Axis1 = 縦スクロール、Axis2 = 横スクロール（今回は対象外）
+        let pixelDelta = event.getIntegerValueField(.scrollWheelEventPointDeltaAxis1)
+        event.setIntegerValueField(.scrollWheelEventPointDeltaAxis1, value: -pixelDelta)
+
+        let lineDelta = event.getIntegerValueField(.scrollWheelEventDeltaAxis1)
+        event.setIntegerValueField(.scrollWheelEventDeltaAxis1, value: -lineDelta)
+
+        let fixedDelta = event.getDoubleValueField(.scrollWheelEventFixedPtDeltaAxis1)
+        event.setDoubleValueField(.scrollWheelEventFixedPtDeltaAxis1, value: -fixedDelta)
+
+        return Unmanaged.passUnretained(event)
+    }
+
     private func setupHIDManager() {
         hidManager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
         guard let hidManager = hidManager else { return }
@@ -294,6 +392,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
     var commandMenuItem: NSMenuItem!
     var capsLockMenuItem: NSMenuItem!
+    var reverseMouseMenuItem: NSMenuItem!
     var websiteMenuItem: NSMenuItem!
     var autoCheckMenuItem: NSMenuItem!
     var updateCheckTimer: Timer?
@@ -344,6 +443,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // --- セパレーター ---
         menu.addItem(NSMenuItem.separator())
 
+        // --- Reverse Mouse Scroll ---
+        reverseMouseMenuItem = NSMenuItem(
+            title: "Reverse Mouse Scroll", action: #selector(toggleReverseMouseScroll(_:)),
+            keyEquivalent: "")
+        reverseMouseMenuItem.target = self
+        let reverseMouse = UserDefaults.standard.bool(forKey: "reverseMouseScroll")
+        reverseMouseMenuItem.state = reverseMouse ? .on : .off
+        menu.addItem(reverseMouseMenuItem)
+
+        // --- セパレーター ---
+        menu.addItem(NSMenuItem.separator())
+
         // --- Check for Updates Automatically ---
         autoCheckMenuItem = NSMenuItem(
             title: "Check for Updates Automatically", action: #selector(toggleAutoCheck(_:)),
@@ -383,6 +494,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             capsLockMenuItem.state = .off
             interceptor.currentMode = .command
         }
+
+        // スクロール反転設定の復元（interceptor の didSet が scrollTap を有効化）
+        interceptor.reverseMouseScroll = reverseMouse
 
         // アップデートチェックのセットアップ
         updateChecker.onUpdateAvailable = { [weak self] version in
@@ -474,6 +588,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let button = statusItem.button {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }
+    }
+
+    @objc func toggleReverseMouseScroll(_ sender: NSMenuItem) {
+        let newState = sender.state == .off
+        sender.state = newState ? .on : .off
+        UserDefaults.standard.set(newState, forKey: "reverseMouseScroll")
+        interceptor.reverseMouseScroll = newState
     }
 
     @objc func toggleAutoCheck(_ sender: NSMenuItem) {

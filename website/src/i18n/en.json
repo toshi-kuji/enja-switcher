@@ -29,6 +29,11 @@
       }
     ]
   },
+  "scroll": {
+    "heading": "Also: Reverse Mouse Scroll",
+    "description": "macOS applies \"Natural Scrolling\" to both trackpad and mouse at once — there is no way to set them separately. Toggle <strong>Reverse Mouse Scroll</strong> in the menu bar to reverse only mouse wheel scrolling, while leaving trackpad as-is. Use natural scrolling on trackpad and traditional scrolling on mouse, or vice versa.",
+    "badge": "Bonus"
+  },
   "install": {
     "heading": "Installation",
     "steps": [

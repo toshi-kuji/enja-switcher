@@ -49,9 +49,9 @@ This lets you set "natural scrolling on trackpad, traditional on mouse" (or any 
 ### Details
 
 - Mouse vs. trackpad is detected via the CGEvent `scrollPhase` / `momentumPhase` fields. Trackpad events carry phase information; mouse wheel events do not.
-- Trackpad events pass through untouched. For mouse events, all three Y-axis delta fields (pixel, line, fixed-point) are negated to stay consistent across apps.
-- The scroll event tap is only active while the option is on. Turning it off removes the tap entirely.
-- Horizontal scrolling is not affected. No additional permissions required.
+- Trackpad events pass through untouched. For mouse events, the original event is replaced with a new scroll event whose Y-axis line delta is negated. macOS ignores in-place field modifications on the original event, so a fresh event must be created.
+- The scroll event tap is created once at launch and toggled via `CGEvent.tapEnable`. It is not destroyed and re-created, to avoid corrupting the macOS permission cache.
+- Horizontal scrolling is preserved. No additional permissions required.
 
 ## Features
 
@@ -398,9 +398,9 @@ Created by Toshiaki Kujime.
 ### 仕組み
 
 - マウス / トラックパッドの判別は CGEvent の `scrollPhase` / `momentumPhase` フィールドで行います。トラックパッドイベントにはフェーズ情報が付与され、マウスホイールイベントには付きません。
-- トラックパッドイベントは素通し。マウスイベントだけ Y軸の3種類のデルタ値（pixel、line、fixed-point）を全て符号反転します（アプリによって参照フィールドが異なるため）。
-- スクロールイベントtapはONのときだけ有効化されます。OFFにすると完全に解除されます。
-- 横スクロール（Axis2）は対象外。追加の権限は不要です。
+- トラックパッドイベントは素通し。マウスイベントでは、元イベントを破棄し Y軸のラインデルタを反転した新規スクロールイベントを生成して差し替えます（macOS が元イベントの内部バッファを使い回すため、フィールドの直接変更はアプリに反映されません）。
+- スクロールイベントtapは起動時に1回だけ作成し、ON/OFFは `CGEvent.tapEnable` で切り替えます。tapの作成・破棄を繰り返すと権限キャッシュが破損するリスクがあるため、この方式を採用しています。
+- 横スクロール（Axis2）は保持されます。追加の権限は不要です。
 
 ## 特徴
 

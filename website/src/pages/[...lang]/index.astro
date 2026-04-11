@@ -90,6 +90,17 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
       </div>
     </section>
 
+    <!-- Scroll -->
+    <section class="scroll" id="scroll">
+      <div class="container">
+        <div class="scroll-card">
+          <span class="scroll-badge">{t.scroll.badge}</span>
+          <h2 class="scroll-heading">🖱️ {t.scroll.heading}</h2>
+          <p class="scroll-desc" set:html={t.scroll.description} />
+        </div>
+      </div>
+    </section>
+
     <!-- Install -->
     <section class="install" id="install">
       <div class="container">
@@ -322,6 +333,39 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
       object-position: center top;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .scroll-card {
+      background: #f0f8fb;
+      border: 1px solid #c8e2ec;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      position: relative;
+    }
+
+    .scroll-badge {
+      position: absolute;
+      top: -0.6rem;
+      right: 1.5rem;
+      background: #3a8fb7;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.15rem 0.75rem;
+      border-radius: 999px;
+    }
+
+    .scroll-heading {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #1a3d5c;
+      margin-bottom: 0.5rem;
+    }
+
+    .scroll-desc {
+      font-size: 0.95rem;
+      color: #3d7a90;
+      line-height: 1.6;
     }
 
     .steps {

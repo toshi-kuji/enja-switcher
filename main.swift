@@ -214,14 +214,14 @@ class EventInterceptor {
         }
 
         guard let t = CGEvent.tapCreate(
-            tap: .cghidEventTap,
+            tap: .cgSessionEventTap,
             place: .headInsertEventTap,
             options: .defaultTap,
             eventsOfInterest: eventMask,
             callback: callback,
             userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
         ) else {
-            print("Failed to create scroll event tap (needs Accessibility permission)")
+            print("Failed to create scroll event tap (needs Input Monitoring permission)")
             return
         }
 
@@ -259,24 +259,29 @@ class EventInterceptor {
         // マウスホイールはフェーズ情報を持たない（両方0）→ 反転対象
         let scrollPhase = event.getIntegerValueField(.scrollWheelEventScrollPhase)
         let momentumPhase = event.getIntegerValueField(.scrollWheelEventMomentumPhase)
-        let isTrackpad = (scrollPhase != 0 || momentumPhase != 0)
 
-        if isTrackpad {
+        if scrollPhase != 0 || momentumPhase != 0 {
             return Unmanaged.passUnretained(event)
         }
 
-        // 3種類のY軸フィールドを全て反転（アプリによって参照するフィールドが異なる）
-        // Axis1 = 縦スクロール、Axis2 = 横スクロール（今回は対象外）
-        let pixelDelta = event.getIntegerValueField(.scrollWheelEventPointDeltaAxis1)
-        event.setIntegerValueField(.scrollWheelEventPointDeltaAxis1, value: -pixelDelta)
-
+        // macOS が元イベントの内部バッファを使い回すため、setIntegerValueField での
+        // フィールド変更がアプリに反映されない。元イベントを破棄し、
+        // 反転済みの新規スクロールイベントを生成して返す。
         let lineDelta = event.getIntegerValueField(.scrollWheelEventDeltaAxis1)
-        event.setIntegerValueField(.scrollWheelEventDeltaAxis1, value: -lineDelta)
+        let lineDeltaH = event.getIntegerValueField(.scrollWheelEventDeltaAxis2)
 
-        let fixedDelta = event.getDoubleValueField(.scrollWheelEventFixedPtDeltaAxis1)
-        event.setDoubleValueField(.scrollWheelEventFixedPtDeltaAxis1, value: -fixedDelta)
+        guard let newEvent = CGEvent(
+            scrollWheelEvent2Source: nil,
+            units: .line,
+            wheelCount: 2,
+            wheel1: Int32(-lineDelta),
+            wheel2: Int32(lineDeltaH),
+            wheel3: 0
+        ) else {
+            return Unmanaged.passUnretained(event)
+        }
 
-        return Unmanaged.passUnretained(event)
+        return Unmanaged.passRetained(newEvent)
     }
 
     private func setupHIDManager() {
@@ -463,8 +468,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(autoCheckMenuItem)
 
         // --- About This App ---
+        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         websiteMenuItem = NSMenuItem(
-            title: "About This App...", action: #selector(openWebsite),
+            title: "About This App (v\(currentVersion))...", action: #selector(openWebsite),
             keyEquivalent: "")
         websiteMenuItem.target = self
         menu.addItem(websiteMenuItem)
@@ -498,7 +504,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // アップデートチェックのセットアップ
         updateChecker.onUpdateAvailable = { [weak self] version in
             guard let self = self else { return }
-            self.websiteMenuItem.title = "About This App... [v\(version) available]"
+            self.websiteMenuItem.title = "About This App (v\(currentVersion)) — v\(version) available"
         }
 
         if checkEnabled {

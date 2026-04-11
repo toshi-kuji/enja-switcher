@@ -123,6 +123,7 @@ class EventInterceptor {
             CGEvent.tapEnable(tap: tap, enable: true)
         }
         setupHIDManager()
+        setupScrollTap()
     }
 
     private func handleEvent(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent)
@@ -194,14 +195,16 @@ class EventInterceptor {
     // MARK: - Scroll Direction Tap
 
     private func updateScrollTapState() {
-        if reverseMouseScroll && scrollTap == nil {
-            startScrollTap()
-        } else if !reverseMouseScroll && scrollTap != nil {
-            stopScrollTap()
+        if let tap = scrollTap {
+            CGEvent.tapEnable(tap: tap, enable: reverseMouseScroll)
+            print("Scroll event tap \(reverseMouseScroll ? "enabled" : "disabled").")
         }
     }
 
-    private func startScrollTap() {
+    /// 起動時に1回だけ呼ばれる。tapを作成し、reverseMouseScroll の初期値に従って enable/disable を設定する。
+    /// tap の作成/破棄を繰り返すと権限キャッシュが破損するリスクがあるため、
+    /// 以降は CGEvent.tapEnable で有効/無効を切り替える。
+    func setupScrollTap() {
         let eventMask: CGEventMask = 1 << CGEventType.scrollWheel.rawValue
 
         let callback: CGEventTapCallBack = { proxy, type, event, refcon in
@@ -226,20 +229,9 @@ class EventInterceptor {
         let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, t, 0)
         self.scrollRunLoopSource = source
         CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes)
-        CGEvent.tapEnable(tap: t, enable: true)
-        print("Scroll event tap enabled.")
-    }
-
-    private func stopScrollTap() {
-        if let tap = scrollTap {
-            CGEvent.tapEnable(tap: tap, enable: false)
-        }
-        if let source = scrollRunLoopSource {
-            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes)
-        }
-        scrollTap = nil
-        scrollRunLoopSource = nil
-        print("Scroll event tap disabled.")
+        // 初期状態は reverseMouseScroll に従う（デフォルト false → disabled）
+        CGEvent.tapEnable(tap: t, enable: reverseMouseScroll)
+        print("Scroll event tap created (initially \(reverseMouseScroll ? "enabled" : "disabled")).")
     }
 
     private func handleScrollEvent(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent)
@@ -247,13 +239,18 @@ class EventInterceptor {
     {
         // tapが無効化されたら自動的に再有効化（フェイルセーフ）
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-            if let tap = self.scrollTap {
+            if let tap = self.scrollTap, reverseMouseScroll {
                 CGEvent.tapEnable(tap: tap, enable: true)
             }
             return Unmanaged.passUnretained(event)
         }
 
         guard type == .scrollWheel else {
+            return Unmanaged.passUnretained(event)
+        }
+
+        // 設定がOFFなら素通し（フェイルセーフ）
+        if !reverseMouseScroll {
             return Unmanaged.passUnretained(event)
         }
 

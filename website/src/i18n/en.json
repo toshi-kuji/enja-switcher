@@ -103,6 +103,22 @@
       {
         "question": "How to uninstall",
         "answer": "Delete EnJaSwitcher.app from your Applications folder. Then remove EnJaSwitcher from the \"Accessibility\" and \"Input Monitoring\" lists in \"System Settings > Privacy & Security\" to clean up permission entries."
+      },
+      {
+        "question": "How is this different from Karabiner-Elements?",
+        "answer": "Karabiner-Elements is a powerful general-purpose key remapper, but it is complex to configure and requires kernel-level privileges. EnJaSwitcher is a lightweight menu bar app focused solely on macOS Eisuu/Kana (input source) switching, uses only standard macOS APIs, and only needs Accessibility and Input Monitoring permissions. It is a good alternative if you don't want to install Karabiner-Elements just for this."
+      },
+      {
+        "question": "How is this different from ei-kana?",
+        "answer": "Like ei-kana, EnJaSwitcher maps Left Command to Eisuu (English) and Right Command to Kana (Japanese). In addition, EnJaSwitcher supports CapsLock mode, mouse side-button and scroll-wheel switching, and Reverse Mouse Scroll. It is also distributed with a developer-signed binary so permissions are less likely to be reset on recent macOS versions."
+      },
+      {
+        "question": "My Mac Eisuu/Kana (input source) switching stopped working",
+        "answer": "Right after a macOS update, Input Monitoring and Accessibility permissions can be silently invalidated. In System Settings > Privacy & Security, remove EnJaSwitcher (minus button) and re-add it (plus button). If it still doesn't work, restart your Mac to refresh the permission cache."
+      },
+      {
+        "question": "How can I switch macOS input method (IME) with the Command key?",
+        "answer": "Set EnJaSwitcher to Command mode from the menu bar. Pressing Left Command alone switches to Eisuu (English), pressing Right Command alone switches to Kana (Japanese). Normal shortcuts like Command+C are unaffected. This works on both JIS and US keyboards — you get instant IME switching without reaching for a dedicated key."
       }
     ]
   },

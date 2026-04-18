@@ -4,14 +4,16 @@ interface Props {
   description: string;
   lang: 'ja' | 'en';
   alternateUrl: string;
+  faqItems?: { question: string; answer: string }[];
 }
 
-const { title, description, lang, alternateUrl } = Astro.props;
+const { title, description, lang, alternateUrl, faqItems } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const siteOrigin = 'https://toshi-kuji.github.io';
-const siteUrl = siteOrigin + '/enja-switcher';
+// Astro.url.pathname と `base` / alternateUrl には `/enja-switcher/` が既に含まれている。
+// siteOrigin のみ前置すること。siteUrl + pathname の形にすると `/enja-switcher/enja-switcher/` の二重になり Google から deindex される（過去事故あり）。
 const currentUrl = siteOrigin + Astro.url.pathname;
-const ogImage = siteUrl + '/og-image.png';
+const ogImage = siteOrigin + base + 'og-image.png';
 const alternateLang = lang === 'ja' ? 'en' : 'ja';
 const alternateFull = siteOrigin + alternateUrl;
 
@@ -80,6 +82,22 @@ const disclaimerPath = isJa ? `${base}disclaimer/` : `${base}en/disclaimer/`;
       "license": "https://opensource.org/licenses/MIT",
       "inLanguage": lang === "ja" ? "ja" : "en"
     })} />
+
+    {faqItems && faqItems.length > 0 && (
+      <script type="application/ld+json" set:html={JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "inLanguage": lang === "ja" ? "ja" : "en",
+        "mainEntity": faqItems.map(item => ({
+          "@type": "Question",
+          "name": item.question,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": item.answer
+          }
+        }))
+      })} />
+    )}
 
     <style>
       /* ===== Reset & Base ===== */

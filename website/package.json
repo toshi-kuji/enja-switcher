@@ -9,7 +9,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "verify:canonical": "node scripts/verify-canonical.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.2",

@@ -42,19 +42,22 @@ const title = isJa
   ? 'EnJaSwitcher - macOS 英数/かな 入力ソース切り替えアプリ'
   : 'EnJaSwitcher - macOS Input Source Switcher (Eisuu/Kana)';
 const description = isJa
-  ? '左⌘で英数、右⌘でかな。macOS の入力ソースをコマンドキーで迷わず切り替えるメニューバーアプリ。'
-  : 'Left ⌘ for Eisuu, Right ⌘ for Kana. A macOS menu bar app that switches input source with Command key — no guessing.';
+  ? '左⌘で英数、右⌘でかな。macOS の入力ソースをコマンドキーで迷わず切り替えるメニューバーアプリ。Karabiner-Elements や英かなの代替にも。'
+  : 'Left ⌘ for Eisuu, Right ⌘ for Kana. A macOS menu bar app that switches input source (IME) with Command key — a lightweight alternative to Karabiner-Elements or ei-kana.';
 const alternateUrl = isJa ? `${base}en/` : `${base}`;
+const heroAlt = isJa
+  ? 'EnJaSwitcher — macOS 英数/かな 入力ソース切り替えメニューバーアプリのアイコン'
+  : 'EnJaSwitcher — icon of the macOS menu bar app for switching Eisuu/Kana input source';
 ---
 
-<Layout {title} {description} {lang} {alternateUrl}>
+<Layout {title} {description} {lang} {alternateUrl} faqItems={t.faq.items}>
   <main>
     <!-- Hero -->
     <section class="hero" id="hero">
       <div class="container">
         <div class="hero-inner">
           <div class="hero-art">
-            <img src={`${base}icon.svg`} alt="EnJaSwitcher" class="hero-icon" />
+            <img src={`${base}icon.svg`} alt={heroAlt} class="hero-icon" />
           </div>
           <div class="hero-text">
             <h1 class="hero-title">EnJaSwitcher</h1>
@@ -82,7 +85,7 @@ const alternateUrl = isJa ? `${base}en/` : `${base}`;
             </div>
             <div class="feature-screenshot">
               {getScreenshot(feature.screenshot) && (
-                <Image src={getScreenshot(feature.screenshot)} alt={feature.title} class="screenshot-img" />
+                <Image src={getScreenshot(feature.screenshot)} alt={`EnJaSwitcher ${feature.title} — ${feature.description.replace(/\n/g, ' ')}`} class="screenshot-img" />
               )}
             </div>
           </div>

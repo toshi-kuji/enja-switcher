@@ -32,6 +32,7 @@ open /Applications/EnJaSwitcher.app
 ## 作業上の注意
 
 - commit & push はユーザーが明示的に指示するまで実行しない
+- プロジェクトへの変更はユーザーが明示的に指示するまで実行しない
 
 ## 重要な制約
 

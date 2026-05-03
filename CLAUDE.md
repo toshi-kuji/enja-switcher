@@ -33,6 +33,9 @@ open /Applications/EnJaSwitcher.app
 
 - commit & push はユーザーが明示的に指示するまで実行しない
 - プロジェクトへの変更はユーザーが明示的に指示するまで実行しない
+- タスク・TODO 管理は GitHub Issues で行う。`.todo/` や `TODO.md` を新規作成しない
+- プランがユーザーに承認されたら、紐づく GitHub Issue にコメントとして全文転記する（紐づく Issue がない場合は作成可否をユーザーに確認）
+- GitHub の Issue / PR / コメントにローカルパス（`/Users/...` 等）や個人ディレクトリ構造を書かない
 
 ## 重要な制約
 

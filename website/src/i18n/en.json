@@ -98,7 +98,11 @@
       },
       {
         "question": "How to launch at login",
-        "answer": "Add EnJaSwitcher in \"System Settings > General > Login Items\". Alternatively, you can set up a LaunchAgent (see the GitHub README for details)."
+        "answer": "Just set up a LaunchAgent once following the GitHub README — it will auto-start from your next login. You don't need to add it to \"System Settings > General > Login Items (Open at Login)\". After setup, macOS will show a one-time notification saying \"added items that can run in the background\" — you don't need to do anything; just leave it as is."
+      },
+      {
+        "question": "It shows as a black icon under \"Allow in the Background\" — is that safe?",
+        "answer": "Yes, it's safe. The LaunchAgent launches the binary directly inside the .app bundle (not the .app itself), so macOS shows its default black \"exec\" icon. The app itself is properly signed with a self-signed certificate. Leave the toggle ON (turning it off will disable auto-start)."
       },
       {
         "question": "How to uninstall",

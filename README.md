@@ -2,12 +2,14 @@
 
 英語と日本語の入力ソースを瞬時に切り替えるmacOSメニューバー常駐アプリ。
 
-このREADMEは対象読者ごとに4セクションに分かれています。あなたに合うものを選んでください。
+このREADMEは対象読者ごとにセクションに分かれています。あなたに合うものを選んでください。
 
 - [日本語（一般ユーザー向け）](#日本語一般ユーザー向け) — アプリをダウンロードして使いたい方
-- [日本語（開発者向け）](#日本語開発者向け) — ソースからビルドしたい方・内部仕様を知りたい方
+- [日本語（開発者向け）](#日本語開発者向け) — ソースからビルドしたい方
+- [日本語（補足・参考情報）](#日本語補足参考情報) — 仕様や設計判断などを知りたい方
 - [English (General Users)](#english-general-users) — Just want to download and use the app
-- [English (Developers)](#english-developers) — Want to build from source or learn internals
+- [English (Developers)](#english-developers) — Want to build from source
+- [English (Reference)](#english-reference) — Specs, architecture, design notes
 
 ---
 
@@ -129,6 +131,14 @@ launchctl load ~/Library/LaunchAgents/com.local.enja-switcher.plist
 
 これで次回ログイン時から自動起動します。
 
+> **過去に `/Library/LaunchAgents/`（システム全体）にセットアップしていた方へ**
+> 旧バージョンの README ではシステム全体の `/Library/LaunchAgents/` への配置を案内していました。現在は `~/Library/LaunchAgents/` に統一しています。レガシー設定が残っている場合は、上記のコマンドを実行する前に以下で削除してください。
+>
+> ```bash
+> sudo launchctl unload /Library/LaunchAgents/com.local.enja-switcher.plist 2>/dev/null
+> sudo rm /Library/LaunchAgents/com.local.enja-switcher.plist
+> ```
+
 ## 自動起動について（重要）
 
 上記の自動起動設定を行うと、macOS の動作として以下のことが起きます。**いずれも正常な動作で、安心してそのまま使ってOK**です。
@@ -180,7 +190,7 @@ rm -rf /Applications/EnJaSwitcher.app
 | 症状 | 対処法 |
 |------|--------|
 | **切り替えが動かない** | 「アクセシビリティ」と「入力監視」の両方で `EnJaSwitcher` が ON になっているか確認。ON なのに動かない場合は、**マイナスボタンで削除してプラスボタンで再追加**する。 |
-| **ログイン後に自動起動しない** | [自動起動の設定](#自動起動の設定) を実行したか確認。「バックグラウンドでの実行を許可」のトグルが ON になっているかも確認。 |
+| **ログイン後に自動起動しない** | [自動起動の設定](#自動起動の設定) を実行したか確認。「バックグラウンドでの実行を許可」のトグルが ON になっているかも確認。なお、ログイン直後ではなく **約 1 分後に起動** することが macOS の仕様としてある（バックグラウンド項目の優先度が低い）。 |
 | **メニューバーにアイコンが出ない** | `pkill -f enja-switcher` で一旦終了してから `open /Applications/EnJaSwitcher.app` で再起動。 |
 | **アップデート後に切り替えが動かなくなった** | 新バージョンをダウンロードして上書きインストールした後、「アクセシビリティ」と「入力監視」から削除して再追加。 |
 
@@ -215,7 +225,100 @@ xattr -cr /Applications/EnJaSwitcher.app
 
 # 日本語（開発者向け）
 
-ソースからビルドしたい方、または内部仕様・設計判断を知りたい方向けのセクションです。
+ソースからビルドしたい方向けのセクションです。**ビルド後のインストール・権限付与・自動起動・停止・アンインストールの手順は一般ユーザー向けセクションと同じ**なので、ビルドが終わったら [日本語（一般ユーザー向け）](#日本語一般ユーザー向け) を参照してください。
+
+## 目次
+
+- [開発環境の前提](#開発環境の前提)
+- [ビルド手順（初回）](#ビルド手順初回)
+- [更新ワークフロー（再ビルド時）](#更新ワークフロー再ビルド時)
+
+## 開発環境の前提
+
+Xcode Command Line Tools がインストールされていることを確認します。
+
+```bash
+xcode-select --version
+```
+
+インストールされていない場合：
+
+```bash
+xcode-select --install
+```
+
+## ビルド手順（初回）
+
+### ステップ 1: リポジトリのクローン
+
+```bash
+git clone https://github.com/toshi-kuji/enja-switcher.git
+cd enja-switcher
+```
+
+### ステップ 2: 自己署名証明書の作成
+
+アプリの更新時に macOS の権限（アクセシビリティ・入力監視）を再設定する手間をなくすため、自己署名証明書で署名します。**同じ証明書で署名し続ける限り、再ビルド後も権限は維持されます**。
+
+**Keychain Access で証明書を作成する手順：**
+
+1. **Keychain Access** アプリを開く（Spotlight で「Keychain Access」と検索）
+2. メニューバーから **Keychain Access > 証明書アシスタント > 証明書を作成...** を選択
+3. 以下の設定で作成:
+   - **名前**: `EnJaSwitcher Dev`
+   - **固有名のタイプ**: 自己署名ルート
+   - **証明書のタイプ**: コード署名
+4. 「作成」をクリック
+
+> この手順は初回の 1 回だけ実行すれば十分です。作成した証明書は Keychain に保存され、以降のビルドで繰り返し使用できます。
+
+### ステップ 3: ビルド・署名・配置
+
+```bash
+swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
+mkdir -p EnJaSwitcher.app/Contents/{MacOS,Resources}
+cp Info.plist EnJaSwitcher.app/Contents/
+cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
+cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
+codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
+cp -r EnJaSwitcher.app /Applications/
+open /Applications/EnJaSwitcher.app
+```
+
+### ステップ 4: ここからは一般ユーザー向け手順と同じ
+
+- 権限の付与 → [ステップ 4: 権限の付与](#ステップ-4-権限の付与)
+- 自動起動の設定 → [自動起動の設定](#自動起動の設定)
+
+> **重要**: 必ず `.app` として起動してください（`open /Applications/EnJaSwitcher.app`）。ターミナルからバイナリを直接実行すると、権限が Terminal.app に付与されてしまい正しく動作しません。
+
+## 更新ワークフロー（再ビルド時）
+
+コードを変更した後や、アプリを更新する際は以下の手順を実行します。
+
+```bash
+pkill -f enja-switcher
+swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
+mkdir -p EnJaSwitcher.app/Contents/{MacOS,Resources}
+cp Info.plist EnJaSwitcher.app/Contents/
+cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
+cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
+codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
+rm -rf /Applications/EnJaSwitcher.app
+cp -r EnJaSwitcher.app /Applications/
+open /Applications/EnJaSwitcher.app
+```
+
+> **署名と権限について**
+> インストール時に作成した自己署名証明書（`EnJaSwitcher Dev`）で署名している限り、再ビルド後も macOS のセキュリティ権限（アクセシビリティ・入力監視）は **再設定不要** です。macOS の TCC データベースは署名の identity でアプリを識別するため、同じ証明書で署名されたバイナリは「同じアプリ」として扱われます。
+>
+> **注意**: 証明書を作り直した場合や、異なる署名でビルドした場合は、権限の再設定が必要です。システム設定 > プライバシーとセキュリティ から「アクセシビリティ」と「入力監視」の両方で、`EnJaSwitcher` を **マイナスボタンで削除してからプラスボタンで再追加** してください。
+
+---
+
+# 日本語（補足・参考情報）
+
+仕様、内部構造、設計判断についての参考情報です。一般利用や開発に必須ではありませんが、興味のある方向け。
 
 ## 目次
 
@@ -223,13 +326,8 @@ xattr -cr /Applications/EnJaSwitcher.app
 - [アプリの構造](#アプリの構造)
 - [必要権限と System Settings の表示](#必要権限と-system-settings-の表示)
 - [スクロール方向制御の仕組み](#スクロール方向制御の仕組み)
-- [開発環境の前提](#開発環境の前提)
-- [ビルド手順（初回）](#ビルド手順初回)
-- [更新ワークフロー（再ビルド時）](#更新ワークフロー再ビルド時)
 - [LaunchAgent 方式を選んだ理由](#launchagent-方式を選んだ理由)
-- [スタートアップ登録の詳細](#スタートアップ登録の詳細)
-- [トラブルシューティング（開発時）](#トラブルシューティング開発時)
-- [クレジット](#クレジット)
+- [開発時のトラブルシューティング](#開発時のトラブルシューティング)
 
 ## 仕様
 
@@ -282,99 +380,12 @@ enja-switcher/
 - スクロールイベント tap は起動時に 1 回だけ作成し、ON/OFF は `CGEvent.tapEnable` で切り替える。tap の作成・破棄を繰り返すと権限キャッシュが破損するリスクがあるため、この方式を採用している。
 - 横スクロール（Axis2）は保持される。追加の権限は不要。
 
-## 開発環境の前提
-
-Xcode Command Line Tools がインストールされていることを確認します。
-
-```bash
-xcode-select --version
-```
-
-インストールされていない場合：
-
-```bash
-xcode-select --install
-```
-
-## ビルド手順（初回）
-
-### ステップ 1: リポジトリのクローン
-
-```bash
-git clone https://github.com/toshi-kuji/enja-switcher.git
-cd enja-switcher
-```
-
-### ステップ 2: 自己署名証明書の作成
-
-アプリの更新時に macOS の権限（アクセシビリティ・入力監視）を再設定する手間をなくすため、自己署名証明書で署名します。**同じ証明書で署名し続ける限り、再ビルド後も権限は維持されます**。
-
-**Keychain Access で証明書を作成する手順：**
-
-1. **Keychain Access** アプリを開く（Spotlight で「Keychain Access」と検索）
-2. メニューバーから **Keychain Access > 証明書アシスタント > 証明書を作成...** を選択
-3. 以下の設定で作成:
-   - **名前**: `EnJaSwitcher Dev`
-   - **固有名のタイプ**: 自己署名ルート
-   - **証明書のタイプ**: コード署名
-4. 「作成」をクリック
-
-> この手順は初回の 1 回だけ実行すれば十分です。作成した証明書は Keychain に保存され、以降のビルドで繰り返し使用できます。
-
-### ステップ 3: ビルド・署名・配置
-
-```bash
-swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
-mkdir -p EnJaSwitcher.app/Contents/{MacOS,Resources}
-cp Info.plist EnJaSwitcher.app/Contents/
-cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
-cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
-codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
-cp -r EnJaSwitcher.app /Applications/
-```
-
-### ステップ 4: 初回起動と権限の付与
-
-```bash
-open /Applications/EnJaSwitcher.app
-```
-
-初回起動時に macOS のダイアログが表示されます。**システム設定 > プライバシーとセキュリティ** を開き、以下の 2 箇所で `EnJaSwitcher` を許可（オン）してください：
-
-- **アクセシビリティ**（仮想キー送信に必要）
-- **入力監視**（キーボード監視に必要）
-
-> **重要**: 必ず `.app` として起動してください。ターミナルからバイナリを直接実行すると、権限が Terminal.app に付与されてしまい正しく動作しません。
-
-## 更新ワークフロー（再ビルド時）
-
-コードを変更した後や、アプリを更新する際は以下の手順を実行します。
-
-```bash
-pkill -f enja-switcher
-swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
-mkdir -p EnJaSwitcher.app/Contents/{MacOS,Resources}
-cp Info.plist EnJaSwitcher.app/Contents/
-cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
-cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
-codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
-rm -rf /Applications/EnJaSwitcher.app
-cp -r EnJaSwitcher.app /Applications/
-open /Applications/EnJaSwitcher.app
-```
-
-> **署名と権限について**
-> インストール時に作成した自己署名証明書（`EnJaSwitcher Dev`）で署名している限り、再ビルド後も macOS のセキュリティ権限（アクセシビリティ・入力監視）は **再設定不要** です。macOS の TCC データベースは署名の identity でアプリを識別するため、同じ証明書で署名されたバイナリは「同じアプリ」として扱われます。
->
-> **注意**: 証明書を作り直した場合や、異なる署名でビルドした場合は、権限の再設定が必要です。システム設定 > プライバシーとセキュリティ から「アクセシビリティ」と「入力監視」の両方で、`EnJaSwitcher` を **マイナスボタンで削除してからプラスボタンで再追加** してください。
-
 ## LaunchAgent 方式を選んだ理由
 
 本アプリは自動起動の仕組みとして、macOS 13 以降の `SMAppService`（Login Item 登録 API）ではなく、従来の **LaunchAgent plist** 方式を採用しています。
 
 | 観点 | LaunchAgent 方式の利点 |
 |---|---|
-| マルチユーザー対応 | `/Library/LaunchAgents/` に配置すれば、その Mac の全ユーザーに対して一度の設定で自動起動を配信できる |
 | プロセス管理 | launchd の `KeepAlive` によりクラッシュ時の自動再起動など、プロセス管理機能が利用できる |
 | 関心の分離 | アプリ本体（main.swift）に自動起動登録ロジックを書かない。配布物は「バイナリ + plist」で完結する |
 | 軽量性 | `.app` バンドル + plist のみで動作し、追加のフレームワーク依存がない |
@@ -384,56 +395,17 @@ open /Applications/EnJaSwitcher.app
 
 - Login Item 方式は「Open at Login」セクションにアプリアイコンが正しく表示されるため、UX 上は綺麗
 - LaunchAgent 方式は「バックグラウンドでの実行を許可」セクションに `enja-switcher` という裸のバイナリ名と "exec" デフォルトアイコンで表示されるため、ユーザーから見ると不安に感じる可能性がある（→ 一般ユーザー向けセクションで説明することで対処）
-- 上記の「マルチユーザー配信」「launchd の機能」「関心の分離」を優先して LaunchAgent 方式を採用
+- 上記の「launchd の機能」「関心の分離」を優先して LaunchAgent 方式を採用
 
-## スタートアップ登録の詳細
-
-ログイン時に自動起動させるには、LaunchAgent 用の plist ファイルを作成します。
-
-**現在のユーザーのみ自動起動させる場合：**
-
-```bash
-mkdir -p ~/Library/LaunchAgents
-cat << 'EOF' > ~/Library/LaunchAgents/com.local.enja-switcher.plist
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.local.enja-switcher</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/Applications/EnJaSwitcher.app/Contents/MacOS/enja-switcher</string>
-    </array>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <true/>
-</dict>
-</plist>
-EOF
-
-launchctl load ~/Library/LaunchAgents/com.local.enja-switcher.plist
-```
-
-> **補足**: LaunchAgent は launchd がバイナリを直接起動するため、Terminal.app 経由ではありません。権限は正しく `EnJaSwitcher.app` に対して適用されます。
-
-**全ユーザー共通にする場合**は、配置先を `/Library/LaunchAgents/` に変更し `sudo` を使用して作成してください。ただし、セキュリティ権限（アクセシビリティと入力監視）は各ユーザーで個別に許可する必要があります。
-
-## トラブルシューティング（開発時）
+## 開発時のトラブルシューティング
 
 | 症状 | 対処法 |
 |------|--------|
 | **ターミナル内では動くが、他のアプリで動かない** | macOS の権限ブロックが原因。固定署名であれば通常発生しないが、万一の場合は「アクセシビリティ」と「入力監視」のリストから `EnJaSwitcher` を **マイナスボタンで削除し、プラスボタンで再追加** する。 |
 | **切り替えが動かない** | 権限のリセット（上記）を試す。`open /Applications/EnJaSwitcher.app` で起動しているか確認。 |
-| **ログイン後に起動しない** | `launchctl list \| grep enja` でプロセス状態を確認。plist ファイルが正しい場所に存在するか確認。 |
+| **ログイン後に起動しない** | `launchctl list \| grep enja` でプロセス状態を確認。plist ファイルが `~/Library/LaunchAgents/com.local.enja-switcher.plist` に存在するか確認。 |
 | **ビルド後に切り替えが動かなくなった** | `codesign -dvv /Applications/EnJaSwitcher.app` で署名情報を確認。自己署名証明書（`EnJaSwitcher Dev`）で署名されていない場合は、「アクセシビリティ」と「入力監視」からマイナスで削除して再追加。 |
-| **イベントタップが動作しない** | `passRetained` を `passUnretained` に変更していないか確認。また、定数（leftCommandBit 等）をクロージャ外のグローバルスコープに移動していないか確認。 |
-
-## クレジット
-
-作者: Toshiaki Kujime
+| **イベントタップが動作しない** | `passRetained` を `passUnretained` に変更していないか確認。また、定数（`leftCommandBit` 等）をクロージャ外のグローバルスコープに移動していないか確認。 |
 
 ---
 
@@ -555,6 +527,14 @@ launchctl load ~/Library/LaunchAgents/com.local.enja-switcher.plist
 
 The app will auto-start from your next login.
 
+> **If you previously installed at `/Library/LaunchAgents/` (system-wide)**
+> Older versions of this README documented placement in the system-wide `/Library/LaunchAgents/`. We have since standardized on `~/Library/LaunchAgents/`. If you have a legacy install, remove it before running the commands above:
+>
+> ```bash
+> sudo launchctl unload /Library/LaunchAgents/com.local.enja-switcher.plist 2>/dev/null
+> sudo rm /Library/LaunchAgents/com.local.enja-switcher.plist
+> ```
+
 ## About Auto-Start (Important)
 
 Once you enable auto-start above, you'll notice the following macOS behaviors. **Both are normal — feel free to leave everything as-is.**
@@ -606,7 +586,7 @@ Then open **System Settings > Privacy & Security** and remove `EnJaSwitcher` wit
 | Symptom | Solution |
 |---------|----------|
 | **Switching does not work** | Verify `EnJaSwitcher` is ON in both "Accessibility" and "Input Monitoring". If still not working, **remove with the minus button and re-add with the plus button**. |
-| **Does not auto-start at login** | Verify you ran the commands in [Enable Auto-Start at Login](#enable-auto-start-at-login). Also verify the "Allow in the Background" toggle is ON. |
+| **Does not auto-start at login** | Verify you ran the commands in [Enable Auto-Start at Login](#enable-auto-start-at-login). Also verify the "Allow in the Background" toggle is ON. Note that macOS may delay background-item launches by **about 1 minute** after login (this is by design — background items have lower priority). |
 | **No icon in the menu bar** | Run `pkill -f enja-switcher` to terminate, then `open /Applications/EnJaSwitcher.app` to restart. |
 | **Switching stops working after an update** | After installing the new version, remove and re-add `EnJaSwitcher` from both "Accessibility" and "Input Monitoring". |
 
@@ -641,7 +621,100 @@ Created by Toshiaki Kujime.
 
 # English (Developers)
 
-For those who want to build from source or learn about internal specifications and design decisions.
+For those who want to build from source. **Installation, permissions, auto-start, stopping, and uninstallation are identical to the general user flow** — once you've built the app, follow [English (General Users)](#english-general-users).
+
+## Table of Contents
+
+- [Development Prerequisites](#development-prerequisites)
+- [Build Steps (First Time)](#build-steps-first-time)
+- [Update Workflow (Rebuild)](#update-workflow-rebuild)
+
+## Development Prerequisites
+
+Verify that Xcode Command Line Tools are installed.
+
+```bash
+xcode-select --version
+```
+
+If not installed:
+
+```bash
+xcode-select --install
+```
+
+## Build Steps (First Time)
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/toshi-kuji/enja-switcher.git
+cd enja-switcher
+```
+
+### Step 2: Create a Self-Signed Certificate
+
+To avoid having to reconfigure macOS permissions (Accessibility and Input Monitoring) every time the app is updated, sign it with a self-signed certificate. **As long as you keep signing with the same certificate, permissions are preserved after rebuilds.**
+
+**Steps to create a certificate in Keychain Access:**
+
+1. Open the **Keychain Access** app (search for "Keychain Access" in Spotlight)
+2. From the menu bar, select **Keychain Access > Certificate Assistant > Create a Certificate...**
+3. Create with the following settings:
+   - **Name**: `EnJaSwitcher Dev`
+   - **Identity Type**: Self-Signed Root
+   - **Certificate Type**: Code Signing
+4. Click "Create"
+
+> This step only needs to be done once. The created certificate is saved in the Keychain and can be reused for subsequent builds.
+
+### Step 3: Build, Sign & Deploy
+
+```bash
+swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
+mkdir -p EnJaSwitcher.app/Contents/{MacOS,Resources}
+cp Info.plist EnJaSwitcher.app/Contents/
+cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
+cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
+codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
+cp -r EnJaSwitcher.app /Applications/
+open /Applications/EnJaSwitcher.app
+```
+
+### Step 4: From here, follow the general user flow
+
+- Grant permissions → [Step 4: Grant Permissions](#step-4-grant-permissions)
+- Enable auto-start → [Enable Auto-Start at Login](#enable-auto-start-at-login)
+
+> **Important**: Always launch the `.app` (`open /Applications/EnJaSwitcher.app`). Running the binary directly from the terminal will grant permissions to Terminal.app instead, and the app will not work correctly.
+
+## Update Workflow (Rebuild)
+
+Run the following steps after modifying the code or when updating the app.
+
+```bash
+pkill -f enja-switcher
+swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
+mkdir -p EnJaSwitcher.app/Contents/{MacOS,Resources}
+cp Info.plist EnJaSwitcher.app/Contents/
+cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
+cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
+codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
+rm -rf /Applications/EnJaSwitcher.app
+cp -r EnJaSwitcher.app /Applications/
+open /Applications/EnJaSwitcher.app
+```
+
+> **About Signing and Permissions**
+> As long as you sign with the self-signed certificate (`EnJaSwitcher Dev`) created during installation, macOS security permissions (Accessibility and Input Monitoring) **do not need to be reconfigured** after rebuilds. The macOS TCC database identifies apps by their signing identity, so binaries signed with the same certificate are treated as "the same app."
+>
+> **Note**: If you recreate the certificate or build with a different signature, you will need to reconfigure permissions. Go to System Settings > Privacy & Security and **remove `EnJaSwitcher` with the minus button, then re-add it with the plus button** in both "Accessibility" and "Input Monitoring".
+
+---
+
+# English (Reference)
+
+Specifications, internal architecture, and design decisions. Not required for using or building the app — for those who want to know.
 
 ## Table of Contents
 
@@ -649,13 +722,8 @@ For those who want to build from source or learn about internal specifications a
 - [App Structure](#app-structure)
 - [Required Permissions & System Settings Display](#required-permissions--system-settings-display)
 - [Scroll Direction Control: How It Works](#scroll-direction-control-how-it-works)
-- [Development Prerequisites](#development-prerequisites)
-- [Build Steps (First Time)](#build-steps-first-time)
-- [Update Workflow (Rebuild)](#update-workflow-rebuild)
 - [Why LaunchAgent Was Chosen](#why-launchagent-was-chosen)
-- [Startup Registration Details](#startup-registration-details)
 - [Troubleshooting (Development)](#troubleshooting-development)
-- [Credits](#credits)
 
 ## Specifications
 
@@ -708,99 +776,12 @@ enja-switcher/
 - The scroll event tap is created once at launch and toggled via `CGEvent.tapEnable`. It is not destroyed and re-created, to avoid corrupting the macOS permission cache.
 - Horizontal scrolling (Axis2) is preserved. No additional permissions required.
 
-## Development Prerequisites
-
-Verify that Xcode Command Line Tools are installed.
-
-```bash
-xcode-select --version
-```
-
-If not installed:
-
-```bash
-xcode-select --install
-```
-
-## Build Steps (First Time)
-
-### Step 1: Clone the Repository
-
-```bash
-git clone https://github.com/toshi-kuji/enja-switcher.git
-cd enja-switcher
-```
-
-### Step 2: Create a Self-Signed Certificate
-
-To avoid having to reconfigure macOS permissions (Accessibility and Input Monitoring) every time the app is updated, sign it with a self-signed certificate. **As long as you keep signing with the same certificate, permissions are preserved after rebuilds.**
-
-**Steps to create a certificate in Keychain Access:**
-
-1. Open the **Keychain Access** app (search for "Keychain Access" in Spotlight)
-2. From the menu bar, select **Keychain Access > Certificate Assistant > Create a Certificate...**
-3. Create with the following settings:
-   - **Name**: `EnJaSwitcher Dev`
-   - **Identity Type**: Self-Signed Root
-   - **Certificate Type**: Code Signing
-4. Click "Create"
-
-> This step only needs to be done once. The created certificate is saved in the Keychain and can be reused for subsequent builds.
-
-### Step 3: Build, Sign & Deploy
-
-```bash
-swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
-mkdir -p EnJaSwitcher.app/Contents/{MacOS,Resources}
-cp Info.plist EnJaSwitcher.app/Contents/
-cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
-cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
-codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
-cp -r EnJaSwitcher.app /Applications/
-```
-
-### Step 4: First Launch & Grant Permissions
-
-```bash
-open /Applications/EnJaSwitcher.app
-```
-
-On first launch, macOS will display dialogs. Open **System Settings > Privacy & Security** and enable `EnJaSwitcher` in both:
-
-- **Accessibility** (required for virtual key dispatch)
-- **Input Monitoring** (required for keyboard monitoring)
-
-> **Important**: Always launch the `.app`. Running the binary directly from the terminal will grant permissions to Terminal.app instead, and the app will not work correctly.
-
-## Update Workflow (Rebuild)
-
-Run the following steps after modifying the code or when updating the app.
-
-```bash
-pkill -f enja-switcher
-swiftc -O -o enja-switcher main.swift -framework Carbon -framework Cocoa -framework IOKit
-mkdir -p EnJaSwitcher.app/Contents/{MacOS,Resources}
-cp Info.plist EnJaSwitcher.app/Contents/
-cp AppIcon.icns EnJaSwitcher.app/Contents/Resources/
-cp enja-switcher EnJaSwitcher.app/Contents/MacOS/
-codesign --force --sign "EnJaSwitcher Dev" EnJaSwitcher.app
-rm -rf /Applications/EnJaSwitcher.app
-cp -r EnJaSwitcher.app /Applications/
-open /Applications/EnJaSwitcher.app
-```
-
-> **About Signing and Permissions**
-> As long as you sign with the self-signed certificate (`EnJaSwitcher Dev`) created during installation, macOS security permissions (Accessibility and Input Monitoring) **do not need to be reconfigured** after rebuilds. The macOS TCC database identifies apps by their signing identity, so binaries signed with the same certificate are treated as "the same app."
->
-> **Note**: If you recreate the certificate or build with a different signature, you will need to reconfigure permissions. Go to System Settings > Privacy & Security and **remove `EnJaSwitcher` with the minus button, then re-add it with the plus button** in both "Accessibility" and "Input Monitoring".
-
 ## Why LaunchAgent Was Chosen
 
 This app uses the traditional **LaunchAgent plist** approach for auto-start, rather than the macOS 13+ `SMAppService` (Login Item registration API).
 
 | Aspect | Advantage of the LaunchAgent approach |
 |---|---|
-| Multi-user support | Placing the plist in `/Library/LaunchAgents/` enables auto-start for **all users** of the Mac with a single setup |
 | Process management | launchd's `KeepAlive` provides features like automatic restart on crash |
 | Separation of concerns | The app itself (main.swift) contains no auto-start registration logic. Distribution is "binary + plist" |
 | Lightweight | Works with just the `.app` bundle and a plist; no additional framework dependencies |
@@ -810,42 +791,7 @@ This app uses the traditional **LaunchAgent plist** approach for auto-start, rat
 
 - The Login Item approach displays the app icon properly in the "Open at Login" section, which is cleaner UX
 - The LaunchAgent approach displays as `enja-switcher` (the bare binary name) with the default "exec" icon under "Allow in the Background", which may look unsettling to users (→ addressed by an explanatory section in the General Users README)
-- The benefits above (multi-user distribution, launchd features, separation of concerns) outweigh the UI cost
-
-## Startup Registration Details
-
-To enable auto-start at login, create a LaunchAgent plist file.
-
-**To auto-start for the current user only:**
-
-```bash
-mkdir -p ~/Library/LaunchAgents
-cat << 'EOF' > ~/Library/LaunchAgents/com.local.enja-switcher.plist
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.local.enja-switcher</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/Applications/EnJaSwitcher.app/Contents/MacOS/enja-switcher</string>
-    </array>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <true/>
-</dict>
-</plist>
-EOF
-
-launchctl load ~/Library/LaunchAgents/com.local.enja-switcher.plist
-```
-
-> **Note**: LaunchAgent starts the binary directly via launchd, not through Terminal.app. Permissions are correctly applied to `EnJaSwitcher.app`.
-
-**To apply for all users**, change the destination to `/Library/LaunchAgents/` and use `sudo` to create the file. However, security permissions (Accessibility and Input Monitoring) must be granted individually for each user.
+- The benefits above (launchd features, separation of concerns) outweigh the UI cost
 
 ## Troubleshooting (Development)
 
@@ -853,10 +799,6 @@ launchctl load ~/Library/LaunchAgents/com.local.enja-switcher.plist
 |---------|----------|
 | **Works in the terminal but not in other apps** | Caused by macOS permission blocking. This should not normally occur with a fixed certificate, but if it does, **remove `EnJaSwitcher` with the minus button and re-add it with the plus button** in both "Accessibility" and "Input Monitoring". |
 | **Switching does not work** | Try resetting permissions (see above). Verify that you are launching with `open /Applications/EnJaSwitcher.app`. |
-| **Does not start after login** | Check the process status with `launchctl list \| grep enja`. Verify that the plist file exists in the correct location. |
+| **Does not start after login** | Check the process status with `launchctl list \| grep enja`. Verify that the plist file exists at `~/Library/LaunchAgents/com.local.enja-switcher.plist`. |
 | **Switching stops working after a rebuild** | Check the signing information with `codesign -dvv /Applications/EnJaSwitcher.app`. If not signed with the self-signed certificate (`EnJaSwitcher Dev`), remove and re-add in both "Accessibility" and "Input Monitoring" using the minus and plus buttons. |
-| **Event tap stops working** | Verify you have not changed `passRetained` to `passUnretained`. Also verify constants (e.g., leftCommandBit) have not been moved out of the closure into global scope. |
-
-## Credits
-
-Created by Toshiaki Kujime.
+| **Event tap stops working** | Verify you have not changed `passRetained` to `passUnretained`. Also verify constants (e.g., `leftCommandBit`) have not been moved out of the closure into global scope. |

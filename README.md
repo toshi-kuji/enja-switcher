@@ -23,8 +23,9 @@
 - [切り替え方式](#切り替え方式)
 - [スクロール方向制御](#スクロール方向制御)
 - [ダウンロードとインストール](#ダウンロードとインストール)
-- [自動起動の設定](#自動起動の設定)
+- [自動起動](#自動起動)
 - [自動起動について（重要）](#自動起動について重要)
+- [旧バージョンからの移行（任意）](#旧バージョンからの移行任意)
 - [停止方法](#停止方法)
 - [アンインストール](#アンインストール)
 - [トラブルシューティング](#トラブルシューティング)
@@ -100,44 +101,11 @@
 - **左Command 単押し** → 英語（ABC）に切り替わる
 - **右Command 単押し** → 日本語（ひらがな）に切り替わる
 
-## 自動起動の設定
+## 自動起動
 
-ログイン時に自動起動させたい場合は、以下のコマンドをターミナルで1回実行してください（コピー&ペーストでOK）。
+**何もする必要はありません**。インストール後、最初にアプリを起動した時点で自動的にログイン時起動が有効になります。
 
-```bash
-mkdir -p ~/Library/LaunchAgents
-cat << 'EOF' > ~/Library/LaunchAgents/com.local.enja-switcher.plist
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.local.enja-switcher</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/Applications/EnJaSwitcher.app/Contents/MacOS/enja-switcher</string>
-    </array>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <true/>
-</dict>
-</plist>
-EOF
-
-launchctl load ~/Library/LaunchAgents/com.local.enja-switcher.plist
-```
-
-これで次回ログイン時から自動起動します。
-
-> **過去に `/Library/LaunchAgents/`（システム全体）にセットアップしていた方へ**
-> 旧バージョンの README ではシステム全体の `/Library/LaunchAgents/` への配置を案内していました。現在は `~/Library/LaunchAgents/` に統一しています。レガシー設定が残っている場合は、上記のコマンドを実行する前に以下で削除してください。
->
-> ```bash
-> sudo launchctl unload /Library/LaunchAgents/com.local.enja-switcher.plist 2>/dev/null
-> sudo rm /Library/LaunchAgents/com.local.enja-switcher.plist
-> ```
+OFF にしたい / 再度 ON にしたい場合は、メニューバーの「E/J」アイコン →「Launch at Login (Background)」のチェックを切り替えてください。
 
 ## 自動起動について（重要）
 
@@ -160,6 +128,31 @@ launchctl load ~/Library/LaunchAgents/com.local.enja-switcher.plist
 **システム設定 > 一般 > ログイン項目 > Open at Login** に EnJaSwitcher を追加する必要は **ありません**。上記の自動起動設定（LaunchAgent）が同じ役割を果たしています。
 
 もし両方に登録されている場合は、`Open at Login` 側を選択してマイナスボタンで削除してください（バックグラウンド側の方を残す）。
+
+## 旧バージョンからの移行（任意）
+
+v1.3.0 以前で、旧 README の手順に従って `/Library/LaunchAgents/` にシステム全体の LaunchAgent を `sudo` で手動セットアップしていた方向けの案内です。
+
+**現状のままでも問題なく動作します**。レガシーの LaunchAgent が引き続きログイン時の自動起動を担当しているので、何もしなくて構いません。
+
+ただし、新方式（v1.3.0 のアプリ自動セットアップ）に移行すると以下のメリットがあります：
+
+- **メニューから ON/OFF 切り替え可能** — ターミナル不要
+- **ユーザー単位での管理** — マルチユーザー Mac で各ユーザーが個別に設定可能。旧方式は Mac 全ユーザーに適用される
+- **アンインストール時に sudo 不要** — 新方式は `~/Library/LaunchAgents/` に配置されるため、自分の領域だけで完結
+- **ログイン時の起動が早い** — 新方式の plist には `ProcessType: Interactive` が含まれるため、launchd が他のバックグラウンドタスクより優先的に起動する。旧方式は ProcessType 未指定で軽量タスク扱い（throttling 対象）になり、ログイン直後ではなく数十秒〜1 分ほど遅れて起動することがある
+
+### 移行手順
+
+1. ターミナルで以下を実行（1 行）。アプリの終了とレガシー削除がまとめて行われます：
+
+   ```bash
+   pkill -f enja-switcher 2>/dev/null; sudo launchctl unload /Library/LaunchAgents/com.local.enja-switcher.plist 2>/dev/null; sudo rm /Library/LaunchAgents/com.local.enja-switcher.plist
+   ```
+
+2. EnJaSwitcher を再度開く（`open /Applications/EnJaSwitcher.app`）
+
+新方式の自動セットアップが走り、メニューバーの「Launch at Login (Background)」が ON 状態になります。
 
 ## 停止方法
 
@@ -190,7 +183,7 @@ rm -rf /Applications/EnJaSwitcher.app
 | 症状 | 対処法 |
 |------|--------|
 | **切り替えが動かない** | 「アクセシビリティ」と「入力監視」の両方で `EnJaSwitcher` が ON になっているか確認。ON なのに動かない場合は、**マイナスボタンで削除してプラスボタンで再追加**する。 |
-| **ログイン後に自動起動しない** | [自動起動の設定](#自動起動の設定) を実行したか確認。「バックグラウンドでの実行を許可」のトグルが ON になっているかも確認。なお、ログイン直後ではなく **約 1 分後に起動** することが macOS の仕様としてある（バックグラウンド項目の優先度が低い）。 |
+| **ログイン後に自動起動しない** | メニューバーの「Launch at Login (Background)」が ON になっているか確認。「バックグラウンドでの実行を許可」のトグルも ON か確認。レガシー設定（旧 README で `/Library/LaunchAgents/` に配置した方）の場合、ログイン直後ではなく **約 1 分後に起動** することがある（[旧バージョンからの移行](#旧バージョンからの移行任意) で解消）。 |
 | **メニューバーにアイコンが出ない** | `pkill -f enja-switcher` で一旦終了してから `open /Applications/EnJaSwitcher.app` で再起動。 |
 | **アップデート後に切り替えが動かなくなった** | 新バージョンをダウンロードして上書きインストールした後、「アクセシビリティ」と「入力監視」から削除して再追加。 |
 
@@ -382,20 +375,20 @@ enja-switcher/
 
 ## LaunchAgent 方式を選んだ理由
 
-本アプリは自動起動の仕組みとして、macOS 13 以降の `SMAppService`（Login Item 登録 API）ではなく、従来の **LaunchAgent plist** 方式を採用しています。
+本アプリは自動起動の仕組みとして、macOS 13 以降の `SMAppService`（Login Item 登録 API）ではなく、従来の **LaunchAgent plist** 方式を採用しています。v1.3.0 以降はアプリが `~/Library/LaunchAgents/` に plist を自動生成・登録します。
 
 | 観点 | LaunchAgent 方式の利点 |
 |---|---|
-| プロセス管理 | launchd の `KeepAlive` によりクラッシュ時の自動再起動など、プロセス管理機能が利用できる |
-| 関心の分離 | アプリ本体（main.swift）に自動起動登録ロジックを書かない。配布物は「バイナリ + plist」で完結する |
+| 起動優先度の制御 | plist に `ProcessType: Interactive` を指定することで launchd の起動優先度を上げ、ログイン直後の遅延を最小化できる |
 | 軽量性 | `.app` バンドル + plist のみで動作し、追加のフレームワーク依存がない |
-| 明示的な制御 | `launchctl` コマンドで開発時に簡単に start / stop / 状態確認ができる |
+| 明示的な制御 | `launchctl` コマンドで開発時に start / stop / 状態確認ができる |
+| 透過性 | plist の中身が見える形でディスクに置かれるため、何が登録されているかユーザーが直接確認できる |
 
 **Login Item 方式（`SMAppService`）と比較したトレードオフ：**
 
 - Login Item 方式は「Open at Login」セクションにアプリアイコンが正しく表示されるため、UX 上は綺麗
 - LaunchAgent 方式は「バックグラウンドでの実行を許可」セクションに `enja-switcher` という裸のバイナリ名と "exec" デフォルトアイコンで表示されるため、ユーザーから見ると不安に感じる可能性がある（→ 一般ユーザー向けセクションで説明することで対処）
-- 上記の「launchd の機能」「関心の分離」を優先して LaunchAgent 方式を採用
+- 上記の利点を優先して LaunchAgent 方式を採用
 
 ## 開発時のトラブルシューティング
 
@@ -419,8 +412,9 @@ A macOS menu bar resident app (input source switcher) that lets you choose betwe
 - [Switching Methods](#switching-methods)
 - [Scroll Direction Control](#scroll-direction-control)
 - [Download & Install](#download--install)
-- [Enable Auto-Start at Login](#enable-auto-start-at-login)
+- [Auto-Start at Login](#auto-start-at-login)
 - [About Auto-Start (Important)](#about-auto-start-important)
+- [Migrating from Older Versions (Optional)](#migrating-from-older-versions-optional)
 - [How to Stop](#how-to-stop)
 - [Uninstallation](#uninstallation)
 - [Troubleshooting](#troubleshooting)
@@ -496,44 +490,11 @@ Confirm that the "E/J" icon appears in the menu bar.
 - **Left Command single press** → Switches to English (ABC)
 - **Right Command single press** → Switches to Japanese (Hiragana)
 
-## Enable Auto-Start at Login
+## Auto-Start at Login
 
-To launch automatically at login, run the following commands once in Terminal (copy and paste).
+**Nothing to do** — auto-start at login is enabled automatically the first time you launch the app after installation.
 
-```bash
-mkdir -p ~/Library/LaunchAgents
-cat << 'EOF' > ~/Library/LaunchAgents/com.local.enja-switcher.plist
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.local.enja-switcher</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/Applications/EnJaSwitcher.app/Contents/MacOS/enja-switcher</string>
-    </array>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <true/>
-</dict>
-</plist>
-EOF
-
-launchctl load ~/Library/LaunchAgents/com.local.enja-switcher.plist
-```
-
-The app will auto-start from your next login.
-
-> **If you previously installed at `/Library/LaunchAgents/` (system-wide)**
-> Older versions of this README documented placement in the system-wide `/Library/LaunchAgents/`. We have since standardized on `~/Library/LaunchAgents/`. If you have a legacy install, remove it before running the commands above:
->
-> ```bash
-> sudo launchctl unload /Library/LaunchAgents/com.local.enja-switcher.plist 2>/dev/null
-> sudo rm /Library/LaunchAgents/com.local.enja-switcher.plist
-> ```
+To turn it off (or back on), click the "E/J" icon in the menu bar and toggle **"Launch at Login (Background)"**.
 
 ## About Auto-Start (Important)
 
@@ -556,6 +517,31 @@ On first registration, macOS shows a one-time notification `"EnJaSwitcher.app ad
 You do **not** need to add EnJaSwitcher to **System Settings > General > Login Items > Open at Login**. The auto-start setup above (LaunchAgent) already handles this.
 
 If you find it registered in both places, you can remove it from `Open at Login` (keep the entry under "Allow in the Background").
+
+## Migrating from Older Versions (Optional)
+
+This section is for users who previously followed the older README and manually set up a system-wide LaunchAgent at `/Library/LaunchAgents/` with `sudo`.
+
+**You can keep using the legacy setup with no issue** — the legacy LaunchAgent continues to handle auto-start at login, and you don't have to do anything.
+
+That said, migrating to the new in-app auto-setup (introduced in v1.3.0) offers the following benefits:
+
+- **Toggle ON/OFF from the menu** — no Terminal required
+- **Per-user management** — on multi-user Macs, each user controls their own setup. The legacy method applies to every user of the Mac
+- **No sudo required for uninstallation** — the new method places the plist under `~/Library/LaunchAgents/`, so removing it stays in your own home directory
+- **Faster launch at login** — the new plist includes `ProcessType: Interactive`, so launchd starts it with higher priority than other background tasks. The legacy plist has no `ProcessType`, which causes launchd to apply lightweight (throttled) scheduling — login-time launches can be delayed by several tens of seconds up to about a minute
+
+### Migration Steps
+
+1. Run the following in Terminal (one line). This quits EnJaSwitcher and removes the legacy install in one go:
+
+   ```bash
+   pkill -f enja-switcher 2>/dev/null; sudo launchctl unload /Library/LaunchAgents/com.local.enja-switcher.plist 2>/dev/null; sudo rm /Library/LaunchAgents/com.local.enja-switcher.plist
+   ```
+
+2. Reopen EnJaSwitcher (`open /Applications/EnJaSwitcher.app`)
+
+The new auto-setup runs and the menu's "Launch at Login (Background)" toggle becomes ON.
 
 ## How to Stop
 
@@ -586,7 +572,7 @@ Then open **System Settings > Privacy & Security** and remove `EnJaSwitcher` wit
 | Symptom | Solution |
 |---------|----------|
 | **Switching does not work** | Verify `EnJaSwitcher` is ON in both "Accessibility" and "Input Monitoring". If still not working, **remove with the minus button and re-add with the plus button**. |
-| **Does not auto-start at login** | Verify you ran the commands in [Enable Auto-Start at Login](#enable-auto-start-at-login). Also verify the "Allow in the Background" toggle is ON. Note that macOS may delay background-item launches by **about 1 minute** after login (this is by design — background items have lower priority). |
+| **Does not auto-start at login** | Verify "Launch at Login (Background)" is checked in the menu bar, and the "Allow in the Background" toggle is ON in System Settings. If you're using the legacy setup (the one in older READMEs that placed the plist at `/Library/LaunchAgents/`), launchd may delay the launch by **about 1 minute** after login — see [Migrating from Older Versions](#migrating-from-older-versions-optional) to fix this. |
 | **No icon in the menu bar** | Run `pkill -f enja-switcher` to terminate, then `open /Applications/EnJaSwitcher.app` to restart. |
 | **Switching stops working after an update** | After installing the new version, remove and re-add `EnJaSwitcher` from both "Accessibility" and "Input Monitoring". |
 
@@ -778,20 +764,20 @@ enja-switcher/
 
 ## Why LaunchAgent Was Chosen
 
-This app uses the traditional **LaunchAgent plist** approach for auto-start, rather than the macOS 13+ `SMAppService` (Login Item registration API).
+This app uses the traditional **LaunchAgent plist** approach for auto-start, rather than the macOS 13+ `SMAppService` (Login Item registration API). From v1.3.0 onward, the app automatically generates and registers the plist under `~/Library/LaunchAgents/`.
 
 | Aspect | Advantage of the LaunchAgent approach |
 |---|---|
-| Process management | launchd's `KeepAlive` provides features like automatic restart on crash |
-| Separation of concerns | The app itself (main.swift) contains no auto-start registration logic. Distribution is "binary + plist" |
+| Launch priority control | Setting `ProcessType: Interactive` in the plist lets launchd start the app with higher priority, minimizing the post-login delay |
 | Lightweight | Works with just the `.app` bundle and a plist; no additional framework dependencies |
-| Explicit control | `launchctl` lets you start / stop / inspect status easily during development |
+| Explicit control | `launchctl` lets you start / stop / inspect status during development |
+| Transparency | The plist sits on disk in plain text, so users can directly inspect what is registered |
 
 **Tradeoffs vs. the Login Item approach (`SMAppService`):**
 
 - The Login Item approach displays the app icon properly in the "Open at Login" section, which is cleaner UX
 - The LaunchAgent approach displays as `enja-switcher` (the bare binary name) with the default "exec" icon under "Allow in the Background", which may look unsettling to users (→ addressed by an explanatory section in the General Users README)
-- The benefits above (launchd features, separation of concerns) outweigh the UI cost
+- The benefits above outweigh the UI cost
 
 ## Troubleshooting (Development)
 

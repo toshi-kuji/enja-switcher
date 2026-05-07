@@ -98,7 +98,7 @@
       },
       {
         "question": "How to launch at login",
-        "answer": "Just set up a LaunchAgent once following the GitHub README — it will auto-start from your next login. You don't need to add it to \"System Settings > General > Login Items (Open at Login)\". After setup, macOS will show a one-time notification saying \"added items that can run in the background\" — you don't need to do anything; just leave it as is."
+        "answer": "From v1.3.0 onward, auto-start at login is enabled automatically the first time you launch the app — nothing for you to do. To turn it off (or back on), click the \"E/J\" icon in the menu bar and toggle \"Launch at Login (Background)\". You don't need to add EnJaSwitcher to \"System Settings > General > Login Items (Open at Login)\"."
       },
       {
         "question": "It shows as a black icon under \"Allow in the Background\" — is that safe?",

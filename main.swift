@@ -213,14 +213,16 @@ class EventInterceptor {
             return interceptor.handleScrollEvent(proxy: proxy, type: type, event: event)
         }
 
-        guard let t = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .defaultTap,
-            eventsOfInterest: eventMask,
-            callback: callback,
-            userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
-        ) else {
+        guard
+            let t = CGEvent.tapCreate(
+                tap: .cgSessionEventTap,
+                place: .headInsertEventTap,
+                options: .defaultTap,
+                eventsOfInterest: eventMask,
+                callback: callback,
+                userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+            )
+        else {
             print("Failed to create scroll event tap (needs Input Monitoring permission)")
             return
         }
@@ -231,7 +233,8 @@ class EventInterceptor {
         CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes)
         // 初期状態は reverseMouseScroll に従う（デフォルト false → disabled）
         CGEvent.tapEnable(tap: t, enable: reverseMouseScroll)
-        print("Scroll event tap created (initially \(reverseMouseScroll ? "enabled" : "disabled")).")
+        print(
+            "Scroll event tap created (initially \(reverseMouseScroll ? "enabled" : "disabled")).")
     }
 
     private func handleScrollEvent(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent)
@@ -270,14 +273,16 @@ class EventInterceptor {
         let lineDelta = event.getIntegerValueField(.scrollWheelEventDeltaAxis1)
         let lineDeltaH = event.getIntegerValueField(.scrollWheelEventDeltaAxis2)
 
-        guard let newEvent = CGEvent(
-            scrollWheelEvent2Source: nil,
-            units: .line,
-            wheelCount: 2,
-            wheel1: Int32(-lineDelta),
-            wheel2: Int32(lineDeltaH),
-            wheel3: 0
-        ) else {
+        guard
+            let newEvent = CGEvent(
+                scrollWheelEvent2Source: nil,
+                units: .line,
+                wheelCount: 2,
+                wheel1: Int32(-lineDelta),
+                wheel2: Int32(lineDeltaH),
+                wheel3: 0
+            )
+        else {
             return Unmanaged.passUnretained(event)
         }
 
@@ -349,7 +354,8 @@ class EventInterceptor {
 // MARK: - Update Checker
 
 class UpdateChecker {
-    static let releasesAPIURL = "https://api.github.com/repos/toshi-kuji/enja-switcher/releases/latest"
+    static let releasesAPIURL =
+        "https://api.github.com/repos/toshi-kuji/enja-switcher/releases/latest"
     static let releasesPageURL = "https://github.com/toshi-kuji/enja-switcher/releases/latest"
 
     var onUpdateAvailable: ((String) -> Void)?
@@ -362,11 +368,12 @@ class UpdateChecker {
 
         URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
             guard error == nil,
-                  let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == 200,
-                  let data = data,
-                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let tagName = json["tag_name"] as? String else {
+                let httpResponse = response as? HTTPURLResponse,
+                httpResponse.statusCode == 200,
+                let data = data,
+                let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                let tagName = json["tag_name"] as? String
+            else {
                 return
             }
 
@@ -377,7 +384,10 @@ class UpdateChecker {
             guard remoteVersion.allSatisfy({ $0.isNumber || $0 == "." }) else { return }
 
             // Compare with current version
-            guard let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else { return }
+            guard
+                let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"]
+                    as? String
+            else { return }
 
             if currentVersion.compare(remoteVersion, options: .numeric) == .orderedAscending {
                 DispatchQueue.main.async {
@@ -385,6 +395,114 @@ class UpdateChecker {
                 }
             }
         }.resume()
+    }
+}
+
+// MARK: - LaunchAgent Management
+
+struct LaunchAgent {
+    static let label = "com.local.enja-switcher"
+
+    static var userPlistDirectory: String {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        return "\(home)/Library/LaunchAgents"
+    }
+
+    static var userPlistPath: String {
+        return "\(userPlistDirectory)/\(label).plist"
+    }
+
+    static let systemPlistPath = "/Library/LaunchAgents/\(label).plist"
+
+    static var binaryPath: String {
+        return Bundle.main.bundlePath + "/Contents/MacOS/enja-switcher"
+    }
+
+    static func plistContents() -> String {
+        return """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+              "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>Label</key>
+                <string>\(label)</string>
+                <key>ProgramArguments</key>
+                <array>
+                    <string>\(binaryPath)</string>
+                </array>
+                <key>RunAtLoad</key>
+                <true/>
+                <key>ProcessType</key>
+                <string>Interactive</string>
+            </dict>
+            </plist>
+            """
+    }
+
+    static var isUserInstalled: Bool {
+        return FileManager.default.fileExists(atPath: userPlistPath)
+    }
+
+    static var hasLegacySystemInstall: Bool {
+        return FileManager.default.fileExists(atPath: systemPlistPath)
+    }
+
+    /// 既に launchctl にロード済みかチェック。
+    static var isRegisteredInLaunchctl: Bool {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+        process.arguments = ["list", label]
+        process.standardError = Pipe()
+        process.standardOutput = Pipe()
+        do {
+            try process.run()
+            process.waitUntilExit()
+            return process.terminationStatus == 0
+        } catch {
+            return false
+        }
+    }
+
+    /// plist を ~/Library/LaunchAgents/ に書き出し、必要なら launchctl に登録する。
+    /// macOS 13+ の Background Item Management に登録するために launchctl load -w が必要。
+    /// この副作用で新プロセスがスポーンされるが、main の重複検知で後発組が exit するので
+    /// 結果的にプロセスは 1 つのみ。既に登録済みの場合は load を呼ばない（無駄な再登録回避）。
+    static func install() {
+        try? FileManager.default.createDirectory(
+            atPath: userPlistDirectory,
+            withIntermediateDirectories: true
+        )
+        try? plistContents().write(
+            toFile: userPlistPath,
+            atomically: true,
+            encoding: .utf8
+        )
+        if !isRegisteredInLaunchctl {
+            runLaunchctl(["load", "-w", userPlistPath])
+        }
+    }
+
+    /// plist ファイルを削除するだけ。launchctl unload は呼ばない
+    /// （呼ぶと SIGTERM で実行中プロセスが kill されてしまう）。
+    /// in-memory のジョブ登録は残るが、KeepAlive がないので影響なし。
+    /// 次回ログイン時に launchd は plist を見つけられず auto-start しない。
+    static func uninstall() {
+        try? FileManager.default.removeItem(atPath: userPlistPath)
+    }
+
+    private static func runLaunchctl(_ args: [String]) {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+        process.arguments = args
+        process.standardError = Pipe()
+        process.standardOutput = Pipe()
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            print("Failed to run launchctl: \(error)")
+        }
     }
 }
 
@@ -397,6 +515,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var reverseMouseMenuItem: NSMenuItem!
     var websiteMenuItem: NSMenuItem!
     var autoCheckMenuItem: NSMenuItem!
+    var launchAtLoginMenuItem: NSMenuItem!
     var updateCheckTimer: Timer?
 
     let interceptor: EventInterceptor
@@ -462,13 +581,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             title: "Check for Updates Automatically", action: #selector(toggleAutoCheck(_:)),
             keyEquivalent: "")
         autoCheckMenuItem.target = self
-        let checkEnabled = UserDefaults.standard.object(forKey: "checkForUpdates") == nil
+        let checkEnabled =
+            UserDefaults.standard.object(forKey: "checkForUpdates") == nil
             || UserDefaults.standard.bool(forKey: "checkForUpdates")
         autoCheckMenuItem.state = checkEnabled ? .on : .off
         menu.addItem(autoCheckMenuItem)
 
+        // --- Launch at Login (Background) ---
+        launchAtLoginMenuItem = NSMenuItem(
+            title: "Launch at Login (Background)", action: #selector(toggleLaunchAtLogin(_:)),
+            keyEquivalent: "")
+        launchAtLoginMenuItem.target = self
+        let launchAtLoginEnabled = setupLaunchAtLogin()
+        launchAtLoginMenuItem.state = launchAtLoginEnabled ? .on : .off
+        menu.addItem(launchAtLoginMenuItem)
+
         // --- About This App ---
-        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let currentVersion =
+            Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         websiteMenuItem = NSMenuItem(
             title: "About This App (v\(currentVersion))...", action: #selector(openWebsite),
             keyEquivalent: "")
@@ -504,7 +634,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // アップデートチェックのセットアップ
         updateChecker.onUpdateAvailable = { [weak self] version in
             guard let self = self else { return }
-            self.websiteMenuItem.title = "About This App (v\(currentVersion)) — v\(version) available"
+            self.websiteMenuItem.title =
+                "About This App (v\(currentVersion)) — v\(version) available"
         }
 
         if checkEnabled {
@@ -519,7 +650,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         // 24時間ごとに繰り返し
         updateCheckTimer?.invalidate()
-        updateCheckTimer = Timer.scheduledTimer(withTimeInterval: 86400, repeats: true) { [weak self] _ in
+        updateCheckTimer = Timer.scheduledTimer(withTimeInterval: 86400, repeats: true) {
+            [weak self] _ in
             self?.updateChecker.check()
         }
     }
@@ -613,6 +745,148 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// 初回起動時の自動セットアップ。メニュー項目の初期状態を返す。
+    private func setupLaunchAtLogin() -> Bool {
+        let defaults = UserDefaults.standard
+
+        // レガシー（/Library/LaunchAgents/）がある場合は重複登録を避けるため
+        // 新方式の auto-install は走らせない。ユーザーが Launch at Login を
+        // ON-toggle した時のみアラートを出して移行を促す（toggleLaunchAtLogin 側で対応）。
+        // defaults.launchAtLogin は書かないことで、レガシー削除後の起動で
+        // 自然に first-launch 扱いとなり auto-install が走るようにする。
+        if LaunchAgent.hasLegacySystemInstall {
+            return false
+        }
+
+        if defaults.object(forKey: "launchAtLogin") == nil {
+            // 初回起動：自動でインストール
+            LaunchAgent.install()
+            defaults.set(true, forKey: "launchAtLogin")
+            return true
+        }
+
+        // 2回目以降：保存された状態に従う。ON 設定だがファイルがなければ再インストール
+        let enabled = defaults.bool(forKey: "launchAtLogin")
+        if enabled && !LaunchAgent.isUserInstalled {
+            LaunchAgent.install()
+        }
+        return enabled
+    }
+
+    private var pendingLegacyCommand: String?
+    private var legacyMigrationPopover: NSPopover?
+
+    @objc private func copyLegacyCommand(_ sender: NSButton) {
+        guard let cmd = pendingLegacyCommand else { return }
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(cmd, forType: .string)
+
+        let originalTitle = sender.title
+        sender.title = "Copied"
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak sender] in
+            sender?.title = originalTitle
+        }
+    }
+
+    @objc private func closeLegacyMigrationPopover() {
+        legacyMigrationPopover?.close()
+        legacyMigrationPopover = nil
+    }
+
+    private func showLegacyMigrationAlert() {
+        let command =
+            "pkill -f enja-switcher 2>/dev/null; sudo launchctl unload /Library/LaunchAgents/com.local.enja-switcher.plist 2>/dev/null; sudo rm /Library/LaunchAgents/com.local.enja-switcher.plist"
+        pendingLegacyCommand = command
+
+        // Close existing popover if any
+        legacyMigrationPopover?.close()
+
+        let popover = NSPopover()
+        popover.behavior = .applicationDefined
+        popover.animates = true
+
+        let viewController = NSViewController()
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 380, height: 310))
+
+        let titleField = NSTextField(labelWithString: "Legacy Install Detected")
+        titleField.font = NSFont.systemFont(ofSize: 13, weight: .bold)
+        titleField.frame = NSRect(x: 16, y: 270, width: 348, height: 20)
+
+        let bodyText = """
+            An older system-wide LaunchAgent was found at:
+            /Library/LaunchAgents/com.local.enja-switcher.plist
+
+            To migrate to the new in-app auto-setup:
+
+            1. Run the command below in Terminal (one line). \
+            This will quit EnJaSwitcher and remove the legacy install.
+            2. Reopen EnJaSwitcher — auto-setup will run automatically.
+            """
+        let bodyField = NSTextField(wrappingLabelWithString: bodyText)
+        bodyField.font = NSFont.systemFont(ofSize: 12)
+        bodyField.textColor = .secondaryLabelColor
+        bodyField.frame = NSRect(x: 16, y: 130, width: 348, height: 136)
+
+        let commandField = NSTextField(frame: NSRect(x: 16, y: 50, width: 280, height: 70))
+        commandField.stringValue = command
+        commandField.isEditable = false
+        commandField.isSelectable = true
+        commandField.isBordered = true
+        commandField.drawsBackground = true
+        commandField.backgroundColor = NSColor.textBackgroundColor
+        commandField.font = NSFont.userFixedPitchFont(ofSize: 11)
+        commandField.cell?.wraps = true
+        commandField.cell?.isScrollable = false
+
+        let copyButton = NSButton(
+            title: "Copy", target: self, action: #selector(copyLegacyCommand(_:)))
+        copyButton.bezelStyle = .rounded
+        copyButton.controlSize = .small
+        copyButton.font = NSFont.systemFont(ofSize: 11)
+        copyButton.frame = NSRect(x: 304, y: 96, width: 60, height: 24)
+
+        let okButton = NSButton(
+            title: "OK", target: self, action: #selector(closeLegacyMigrationPopover))
+        okButton.bezelStyle = .rounded
+        okButton.frame = NSRect(x: 288, y: 8, width: 76, height: 28)
+        okButton.keyEquivalent = "\r"
+
+        container.addSubview(titleField)
+        container.addSubview(bodyField)
+        container.addSubview(commandField)
+        container.addSubview(copyButton)
+        container.addSubview(okButton)
+
+        viewController.view = container
+        popover.contentViewController = viewController
+        popover.contentSize = NSSize(width: 380, height: 310)
+
+        legacyMigrationPopover = popover
+
+        if let button = statusItem.button {
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        }
+    }
+
+    @objc func toggleLaunchAtLogin(_ sender: NSMenuItem) {
+        let newState = sender.state == .off
+
+        if newState {
+            // ON にする：レガシーインストールがあれば警告のみで戻る
+            if LaunchAgent.hasLegacySystemInstall {
+                showLegacyMigrationAlert()
+                return
+            }
+            LaunchAgent.install()
+        } else {
+            LaunchAgent.uninstall()
+        }
+
+        sender.state = newState ? .on : .off
+        UserDefaults.standard.set(newState, forKey: "launchAtLogin")
+    }
+
     @objc func quitApp() {
         NSApplication.shared.terminate(nil)
     }
@@ -628,6 +902,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 // MARK: - Main
+
+// 重複起動防止：launchctl load -w で macOS Background Item Management に登録すると、
+// 副作用として新しいプロセスがスポーンされる。既に別インスタンスが走っていれば
+// この後発組をすぐ exit させ、メニューバーアイコンの重複を防ぐ。
+let myPID = ProcessInfo.processInfo.processIdentifier
+let runningInstances = NSRunningApplication.runningApplications(
+    withBundleIdentifier: "com.local.enja-switcher"
+).filter { $0.processIdentifier != pid_t(myPID) }
+if !runningInstances.isEmpty {
+    print("Another EnJaSwitcher instance is already running. Exiting.")
+    exit(0)
+}
 
 let interceptor = EventInterceptor()
 interceptor.start()

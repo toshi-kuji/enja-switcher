@@ -44,6 +44,39 @@ open /Applications/EnJaSwitcher.app
 
 `[skip ci]`（または `[ci skip]`、`[no ci]` 等）はコミットメッセージのどこかに入れれば GitHub Actions がそのコミットの workflow をスキップする。website 変更だけのリリース外コミット（FAQ の typo 修正等）は `[skip ci]` を付けず通常デプロイで OK。
 
+### github-pages environment の deployment branch/tag policy
+
+`release: published` で起動した workflow は `github.ref` がタグ（例 `v1.3.0`）になる。`github-pages` environment の deployment branch/tag policy で **タグを許可していないと deploy job が即座に失敗する**（エラー：`Tag "vX.Y.Z" is not allowed to deploy to github-pages due to environment protection rules.`。build job は成功するが deploy job だけ 2 秒で failure になる）。
+
+**現在のポリシー**（2026-05-08 時点）：
+- `main` ブランチ
+- `v*.*.*` タグ（このリポジトリの release タグ全部にマッチ）
+
+確認：
+```bash
+gh api repos/toshi-kuji/enja-switcher/environments/github-pages/deployment-branch-policies
+```
+
+タグ policy が消えていたら再追加：
+```bash
+gh api -X POST repos/toshi-kuji/enja-switcher/environments/github-pages/deployment-branch-policies \
+  -f name='v*.*.*' -f type='tag'
+```
+
+**過去の経緯（v1.3.0 で初めて顕在化）**：v1.1.0〜v1.2.0 のときも release-trigger deploy は同じ環境保護で失敗していたが、リリース直後の website 関連 push（または手動 workflow_dispatch）が deploy を肩代わりしていたので気づかれなかった。v1.3.0 でリリース時 commit に `[skip ci]` を付ける運用を入れたことで肩代わり経路が消え、release イベントが唯一の deploy 経路となり失敗が表に出た。
+
+### release deploy が失敗した時の復旧
+
+1. 上記の tag policy が入っているか確認・なければ追加
+2. 失敗した workflow run を再実行：
+   ```bash
+   gh run rerun <RUN_ID> --failed
+   ```
+3. 進行確認：
+   ```bash
+   gh run view <RUN_ID> --json status,conclusion,jobs
+   ```
+
 ## 署名について
 
 - **絶対に ad-hoc 署名（`--sign -`）を使わないこと**。開発機に固定の自己署名証明書「EnJaSwitcher Dev」がインストールされている

@@ -33,6 +33,13 @@ EnJaSwitcher のランディングページ。Astro + GitHub Pages で静的サ�
 - `/en/` (`en/index.astro`) — English landing page
 - `/en/license/` (`en/license.astro`) — MIT License
 - `/en/disclaimer/` (`en/disclaimer.astro`) — Disclaimer
+- `/blog/`, `/blog/<slug>/` / `/en/blog/`, `/en/blog/<slug>/` — ブログ（`[...lang]/blog/`）
+
+## Blog
+- 記事（Markdown）は `src/content/blog/ja/<slug>.md` / `src/content/blog/en/<slug>.md` に置く
+- frontmatter: `title`, `description`, `date`（必須）、`draft: true`（本番ビルドから除外）
+- ja / en で同じ `<slug>` のファイルがあれば言語切替リンクが翻訳記事に繋がる。無ければ相手言語のブログ一覧へ
+- コレクション定義: `src/content.config.ts`、取得ヘルパー: `src/lib/blog.ts`
 
 ## Design Direction
 - シンプルで読みやすい

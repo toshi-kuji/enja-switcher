@@ -1,0 +1,151 @@
+---
+import { render } from 'astro:content';
+import Layout from '../../../layouts/Layout.astro';
+import { getPosts, hasTranslation, splitId, type BlogEntry, type Lang } from '../../../lib/blog';
+
+export async function getStaticPaths() {
+  const langs: Lang[] = ['ja', 'en'];
+  const paths = [];
+  for (const lang of langs) {
+    const other: Lang = lang === 'ja' ? 'en' : 'ja';
+    for (const post of await getPosts(lang)) {
+      const slug = splitId(post.id).slug;
+      paths.push({
+        params: { lang: lang === 'ja' ? undefined : lang, slug },
+        props: { post, lang, translated: await hasTranslation(other, slug) },
+      });
+    }
+  }
+  return paths;
+}
+
+const { post, lang, translated } = Astro.props as { post: BlogEntry; lang: Lang; translated: boolean };
+const { slug } = Astro.params;
+const base = import.meta.env.BASE_URL;
+const isJa = lang === 'ja';
+const { Content } = await render(post);
+
+const title = `${post.data.title} - EnJaSwitcher`;
+const description = post.data.description;
+// 翻訳記事がなければ、相手言語のブログ一覧へ繋ぐ。
+const otherBase = isJa ? `${base}en/blog/` : `${base}blog/`;
+const alternateUrl = translated ? `${otherBase}${slug}/` : otherBase;
+const blogIndex = isJa ? `${base}blog/` : `${base}en/blog/`;
+const dateFormat = new Intl.DateTimeFormat(isJa ? 'ja-JP' : 'en-US', {
+  year: 'numeric',
+  month: isJa ? 'numeric' : 'long',
+  day: 'numeric',
+  timeZone: 'UTC',
+});
+---
+
+<Layout {title} {description} {lang} {alternateUrl}>
+  <main>
+    <article class="post">
+      <div class="container">
+        <p class="back"><a href={blogIndex}>← {isJa ? 'ブログ' : 'Blog'}</a></p>
+        <h1>{post.data.title}</h1>
+        <time datetime={post.data.date.toISOString()}>{dateFormat.format(post.data.date)}</time>
+        <div class="prose">
+          <Content />
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <style>
+    .container {
+      max-width: 48rem;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .post {
+      padding: 3rem 0;
+    }
+
+    .back {
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+
+    .post h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #1a3d5c;
+    }
+
+    .post time {
+      display: block;
+      font-size: 0.85rem;
+      color: #3d7a90;
+      margin-bottom: 2rem;
+    }
+
+    .prose :global(h2) {
+      font-size: 1.3rem;
+      margin: 2rem 0 0.75rem;
+      color: #1a3d5c;
+    }
+
+    .prose :global(h3) {
+      font-size: 1.1rem;
+      margin: 1.5rem 0 0.5rem;
+      color: #1a3d5c;
+    }
+
+    .prose :global(h4) {
+      font-size: 1rem;
+      margin: 1.5rem 0 0.5rem;
+      color: #1a3d5c;
+    }
+
+    .prose :global(hr) {
+      border: none;
+      border-top: 1px solid #c8e2ec;
+      margin: 2.5rem 0;
+    }
+
+    .prose :global(p),
+    .prose :global(ul),
+    .prose :global(ol),
+    .prose :global(pre),
+    .prose :global(blockquote) {
+      margin-bottom: 1rem;
+    }
+
+    .prose :global(ul),
+    .prose :global(ol) {
+      padding-left: 1.5rem;
+    }
+
+    .prose :global(code) {
+      font-size: 0.9em;
+      background: #e6f2f7;
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+
+    .prose :global(pre) {
+      overflow-x: auto;
+      padding: 1rem;
+      border-radius: 8px;
+    }
+
+    .prose :global(pre code) {
+      background: none;
+      padding: 0;
+    }
+
+    .prose :global(blockquote) {
+      border-left: 3px solid #c8e2ec;
+      padding-left: 1rem;
+      color: #3d7a90;
+    }
+
+    .prose :global(img) {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+</Layout>

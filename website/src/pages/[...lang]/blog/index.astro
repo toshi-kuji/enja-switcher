@@ -1,0 +1,100 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { getPosts, splitId } from '../../../lib/blog';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: undefined }, props: { lang: 'ja' as const } },
+    { params: { lang: 'en' }, props: { lang: 'en' as const } },
+  ];
+}
+
+const { lang } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const isJa = lang === 'ja';
+const blogBase = isJa ? `${base}blog/` : `${base}en/blog/`;
+const title = isJa ? 'ブログ - EnJaSwitcher' : 'Blog - EnJaSwitcher';
+const description = isJa
+  ? 'EnJaSwitcher の開発ノートやお知らせ。'
+  : 'Development notes and announcements for EnJaSwitcher.';
+const alternateUrl = isJa ? `${base}en/blog/` : `${base}blog/`;
+
+const posts = await getPosts(lang);
+const dateFormat = new Intl.DateTimeFormat(isJa ? 'ja-JP' : 'en-US', {
+  year: 'numeric',
+  month: isJa ? 'numeric' : 'long',
+  day: 'numeric',
+  timeZone: 'UTC',
+});
+---
+
+<Layout {title} {description} {lang} {alternateUrl}>
+  <main>
+    <section class="blog-page">
+      <div class="container">
+        <h1>{isJa ? 'ブログ' : 'Blog'}</h1>
+        {posts.length === 0 ? (
+          <p class="empty">{isJa ? '記事は準備中です。' : 'Posts are coming soon.'}</p>
+        ) : (
+          <ul class="post-list">
+            {posts.map((post) => (
+              <li>
+                <time datetime={post.data.date.toISOString()}>{dateFormat.format(post.data.date)}</time>
+                <a href={`${blogBase}${splitId(post.id).slug}/`}>{post.data.title}</a>
+                <p>{post.data.description}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  </main>
+
+  <style>
+    .container {
+      max-width: 48rem;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .blog-page {
+      padding: 3rem 0;
+    }
+
+    .blog-page h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: #1a3d5c;
+    }
+
+    .empty {
+      color: #3d7a90;
+    }
+
+    .post-list {
+      list-style: none;
+    }
+
+    .post-list li {
+      margin-bottom: 2rem;
+    }
+
+    .post-list time {
+      display: block;
+      font-size: 0.8rem;
+      color: #3d7a90;
+    }
+
+    .post-list a {
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    .post-list p {
+      color: #3d7a90;
+      font-size: 0.95rem;
+      line-height: 1.8;
+    }
+  </style>
+</Layout>

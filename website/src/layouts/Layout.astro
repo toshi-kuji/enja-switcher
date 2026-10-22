@@ -19,6 +19,7 @@ const alternateFull = siteOrigin + alternateUrl;
 
 const isJa = lang === 'ja';
 const navLabels = {
+  blog: isJa ? 'ブログ' : 'Blog',
   license: isJa ? 'ライセンス' : 'License',
   disclaimer: isJa ? '免責事項' : 'Disclaimer',
   sponsorEmoji: '☕',
@@ -27,6 +28,7 @@ const navLabels = {
   releases: isJa ? '過去のバージョン' : 'Past Releases',
   switchLang: isJa ? 'English' : '日本語',
 };
+const blogPath = isJa ? `${base}blog/` : `${base}en/blog/`;
 const licensePath = isJa ? `${base}license/` : `${base}en/license/`;
 const disclaimerPath = isJa ? `${base}disclaimer/` : `${base}en/disclaimer/`;
 ---
@@ -193,6 +195,7 @@ const disclaimerPath = isJa ? `${base}disclaimer/` : `${base}en/disclaimer/`;
       <nav aria-label={isJa ? 'メインナビ' : 'Main navigation'}>
         <ul class="header-nav">
           <li><a href={isJa ? base : `${base}en/`}>EnJaSwitcher</a></li>
+          <li><a href={blogPath}>{navLabels.blog}</a></li>
           <li><a href={licensePath}>{navLabels.license}</a></li>
           <li><a href={disclaimerPath}>{navLabels.disclaimer}</a></li>
           <li><span class="sponsor-emoji">{navLabels.sponsorEmoji}</span> <span class="coming-soon">{navLabels.sponsor}</span></li>

@@ -1,7 +1,7 @@
 ---
 title: "Claude CodeでmacOSアプリを週末に作ったときのメモ（入力ソース切り替え）"
 description: "EnJaSwitcherをClaude Codeで開発した記録。CGEventTap・IOHIDManager・TISSelectInputSourceのバグ回避・自己署名証明書によるTCC対策・LaunchAgentでハマった箇所と解決策をまとめる。"
-date: 2026-10-22
+date: 2026-04-18
 ---
 
 ## はじめに

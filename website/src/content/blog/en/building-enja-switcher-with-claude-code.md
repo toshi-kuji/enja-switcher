@@ -1,7 +1,7 @@
 ---
 title: "Notes from Building a macOS App over a Weekend with Claude Code (Input Source Switching)"
 description: "How EnJaSwitcher was built with Claude Code: CGEventTap, IOHIDManager, working around a TISSelectInputSource bug, keeping TCC permissions with a self-signed certificate, and LaunchAgent pitfalls."
-date: 2026-10-22
+date: 2026-04-18
 ---
 
 ## Introduction

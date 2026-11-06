@@ -119,6 +119,15 @@ security unlock-keychain ~/Library/Keychains/login.keychain-db
 - プランがユーザーに承認されたら、紐づく GitHub Issue にコメントとして全文転記する（紐づく Issue がない場合は作成可否をユーザーに確認）
 - GitHub の Issue / PR / コメントにローカルパス（`/Users/...` 等）や個人ディレクトリ構造を書かない
 
+## 言語ルール
+
+| 対象 | 言語 |
+|---|---|
+| README | 日本語 → English（日本語が先、English が後） |
+| GitHub Releases（リリースノート） | 日本語 → English（`## 日本語` の後に `## English` を続ける） |
+| PR / Issue / コメント | 英語 |
+| website | 日本語・英語の切り替え（`website/src/i18n/ja.json` と `en.json` を必ず両方更新する） |
+
 ## main ブランチの保護（Ruleset）
 
 `main` には Ruleset `main-protection` を設定している（2026-10-22 時点）。
